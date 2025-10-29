@@ -46,7 +46,7 @@ func (r *Request) Validate() error {
 	}
 	for i, token := range r.Tokens {
 		if token == "" {
-			return fmt.Errorf("token at position %d is empty after trimming", i)
+			return fmt.Errorf("token at position %d is empty", i)
 		}
 	}
 	return nil

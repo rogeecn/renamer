@@ -14,16 +14,15 @@ func ParseArgs(args []string) (ParseArgsResult, error) {
 
 	seen := make(map[string]int)
 	for _, raw := range args {
-		token := strings.TrimSpace(raw)
-		if token == "" {
+		if strings.TrimSpace(raw) == "" {
 			continue
 		}
-		if _, exists := seen[token]; exists {
-			result.Duplicates = append(result.Duplicates, token)
+		if _, exists := seen[raw]; exists {
+			result.Duplicates = append(result.Duplicates, raw)
 			continue
 		}
-		seen[token] = len(result.Tokens)
-		result.Tokens = append(result.Tokens, token)
+		seen[raw] = len(result.Tokens)
+		result.Tokens = append(result.Tokens, raw)
 	}
 
 	if len(result.Tokens) == 0 {

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add `renamer remove` subcommand with sequential multi-token deletions, empty-name safeguards, and ledger-backed undo.
+- Document remove command ordering semantics, duplicate warnings, and automation guidance.
 - Add `renamer replace` subcommand supporting multi-pattern replacements, preview/apply/undo, and scope flags.
 - Document quoting guidance, `--dry-run` / `--yes` behavior, and automation scenarios for replace command.
 - Add `renamer list` subcommand with shared scope flags and plain/table output formats.

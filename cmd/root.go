@@ -46,6 +46,7 @@ func NewRootCommand() *cobra.Command {
 	listing.RegisterScopeFlags(cmd.PersistentFlags())
 	cmd.AddCommand(newListCommand())
 	cmd.AddCommand(NewReplaceCommand())
+	cmd.AddCommand(NewRemoveCommand())
 	cmd.AddCommand(newUndoCommand())
 
 	return cmd

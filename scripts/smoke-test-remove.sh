@@ -11,7 +11,19 @@ touch "$TMP_DIR/report copy draft.txt"
 touch "$TMP_DIR/nested/notes draft.txt"
 
 echo "Previewing removals..."
-$BIN "$ROOT_DIR/main.go" remove " copy" " draft" --path "$TMP_DIR" --recursive --dry-run >/dev/null
+preview_output="$($BIN "$ROOT_DIR/main.go" remove " copy" " draft" --path "$TMP_DIR" --recursive --dry-run)"
+
+if [[ "$preview_output" != *"report copy draft.txt -> report.txt"* ]]; then
+  echo "expected preview to show mapping for report copy draft.txt" >&2
+  echo "$preview_output" >&2
+  exit 1
+fi
+
+if [[ "$preview_output" != *"Preview complete."* ]]; then
+  echo "expected preview completion message" >&2
+  echo "$preview_output" >&2
+  exit 1
+fi
 
 if [[ ! -f "$TMP_DIR/report copy draft.txt" ]]; then
   echo "preview should not modify files" >&2

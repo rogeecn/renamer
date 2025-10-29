@@ -48,3 +48,26 @@ renamer replace <pattern1> [pattern2 ...] <replacement> [flags]
 - List JPEGs only: `renamer --extensions .jpg list`
 - Replace multiple patterns: `renamer replace draft Draft final --dry-run`
 - Include dotfiles: `renamer --hidden --extensions .env list`
+
+## Remove Command Quick Reference
+
+```bash
+renamer remove <token1> [token2 ...] [flags]
+```
+
+- Removal tokens are evaluated in the order supplied. Each token deletes literal substrings from the
+  current filename before the next token runs; results are previewed before any filesystem changes.
+- Duplicate tokens are deduplicated automatically and surfaced as warnings so users can adjust
+  scripts without surprises.
+- Tokens that collapse a filename to an empty string are skipped with warnings during preview/apply
+  to protect against accidental deletion.
+- All scope flags (`--path`, `-r`, `-d`, `--hidden`, `-e`) apply, making it easy to target directories,
+  recurse, and limit removals by extension.
+- Use `--dry-run` for automation previews and combine with `--yes` to apply unattended; conflicting
+  combinations (`--dry-run --yes`) exit with an error to uphold preview-first safety.
+
+### Usage Examples
+
+- Preview sequential removals: `renamer remove " copy" " draft" --dry-run`
+- Remove tokens recursively: `renamer remove foo foo- --recursive --path ./reports`
+- Combine with extension filters: `renamer remove " Project" --extensions .txt|.md --dry-run`

@@ -55,6 +55,10 @@ func Traverse(ctx context.Context, req *Request, fn func(Candidate) error) error
 				}
 			}
 
+			if isDir && !req.IncludeDirectories {
+				return nil
+			}
+
 			candidate := Candidate{
 				RelativePath: filepath.ToSlash(relPath),
 				OriginalPath: filepath.Join(req.WorkingDir, relPath),

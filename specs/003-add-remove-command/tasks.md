@@ -35,16 +35,16 @@
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T007 [P] [US1] Add unit tests covering sequential token application and unchanged cases in `tests/unit/remove_engine_test.go`.
-- [ ] T008 [P] [US1] Create contract test validating preview table output and dry-run messaging in `tests/contract/remove_command_preview_test.go`.
-- [ ] T009 [P] [US1] Write integration test exercising preview → apply flow with multiple files in `tests/integration/remove_flow_test.go`.
+- [X] T007 [P] [US1] Add unit tests covering sequential token application and unchanged cases in `tests/unit/remove_engine_test.go`.
+- [X] T008 [P] [US1] Create contract test validating preview table output and dry-run messaging in `tests/contract/remove_command_preview_test.go`.
+- [X] T009 [P] [US1] Write integration test exercising preview → apply flow with multiple files in `tests/integration/remove_flow_test.go`.
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement sequential removal engine producing planned operations in `internal/remove/engine.go`.
-- [ ] T011 [US1] Build preview pipeline that aggregates summaries, detects conflicts, and streams output in `internal/remove/preview.go`.
-- [ ] T012 [US1] Implement apply pipeline executing planned operations without ledger writes in `internal/remove/apply.go`.
-- [ ] T013 [US1] Wire new Cobra command in `cmd/remove.go` (with registration in `cmd/root.go`) to drive preview/apply using shared scope flags.
+- [X] T010 [US1] Implement sequential removal engine producing planned operations in `internal/remove/engine.go`.
+- [X] T011 [US1] Build preview pipeline that aggregates summaries, detects conflicts, and streams output in `internal/remove/preview.go`.
+- [X] T012 [US1] Implement apply pipeline executing planned operations without ledger writes in `internal/remove/apply.go`.
+- [X] T013 [US1] Wire new Cobra command in `cmd/remove.go` (with registration in `cmd/root.go`) to drive preview/apply using shared scope flags.
 
 **Checkpoint**: User Story 1 functional end-to-end with preview/apply validated by automated tests.
 
@@ -58,13 +58,13 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T014 [P] [US2] Add contract test asserting ledger entries capture ordered tokens and match counts in `tests/contract/remove_command_ledger_test.go`.
-- [ ] T015 [P] [US2] Add integration test covering `--yes` automation path and subsequent undo in `tests/integration/remove_undo_test.go`.
+- [X] T014 [P] [US2] Add contract test asserting ledger entries capture ordered tokens and match counts in `tests/contract/remove_command_ledger_test.go`.
+- [X] T015 [P] [US2] Add integration test covering `--yes` automation path and subsequent undo in `tests/integration/remove_undo_test.go`.
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Extend apply pipeline to append ledger entries with ordered tokens and match counts in `internal/remove/apply.go`.
-- [ ] T017 [US2] Update `cmd/remove.go` to support non-interactive `--yes` execution, emit automation-oriented messages, and propagate exit codes.
+- [X] T016 [US2] Extend apply pipeline to append ledger entries with ordered tokens and match counts in `internal/remove/apply.go`.
+- [X] T017 [US2] Update `cmd/remove.go` to support non-interactive `--yes` execution, emit automation-oriented messages, and propagate exit codes.
 
 **Checkpoint**: User Story 2 complete—CLI safe for scripting with ledger + undo parity.
 
@@ -78,14 +78,14 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T018 [P] [US3] Add parser validation tests for duplicate tokens and whitespace edge cases in `tests/unit/remove_parser_test.go`.
-- [ ] T019 [P] [US3] Add integration test verifying empty-basename warnings and skips in `tests/integration/remove_validation_test.go`.
+- [X] T018 [P] [US3] Add parser validation tests for duplicate tokens and whitespace edge cases in `tests/unit/remove_parser_test.go`.
+- [X] T019 [P] [US3] Add integration test verifying empty-basename warnings and skips in `tests/integration/remove_validation_test.go`.
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Implement duplicate token deduplication with ordered warning collection in `internal/remove/parser.go`.
-- [ ] T021 [US3] Add empty-basename detection and warning tracking in `internal/remove/summary.go`.
-- [ ] T022 [US3] Surface duplicate and empty warnings in CLI output handling within `cmd/remove.go`.
+- [X] T020 [US3] Implement duplicate token deduplication with ordered warning collection in `internal/remove/parser.go`.
+- [X] T021 [US3] Add empty-basename detection and warning tracking in `internal/remove/summary.go`.
+- [X] T022 [US3] Surface duplicate and empty warnings in CLI output handling within `cmd/remove.go`.
 
 **Checkpoint**: All user stories deliver value; validations prevent risky rename plans.
 
@@ -95,10 +95,10 @@
 
 **Purpose**: Documentation, tooling, and quality improvements spanning all user stories.
 
-- [ ] T023 [P] Update remove command documentation and sequential behavior guidance in `docs/cli-flags.md`.
-- [ ] T024 Record release notes for remove command launch in `docs/CHANGELOG.md`.
-- [ ] T025 [P] Finalize `scripts/smoke-test-remove.sh` with assertions and integrate into CI instructions.
-- [ ] T026 Add remove command walkthrough to project onboarding materials in `AGENTS.md`.
+- [X] T023 [P] Update remove command documentation and sequential behavior guidance in `docs/cli-flags.md`.
+- [X] T024 Record release notes for remove command launch in `docs/CHANGELOG.md`.
+- [X] T025 [P] Finalize `scripts/smoke-test-remove.sh` with assertions and integrate into CI instructions.
+- [X] T026 Add remove command walkthrough to project onboarding materials in `AGENTS.md`.
 
 ---
 
