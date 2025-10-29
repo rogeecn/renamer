@@ -29,5 +29,24 @@ func Execute() {
 }
 
 func init() {
+	// Register persistent flags shared by all subcommands (`list`, `replace`, etc.).
+	// These scope flags remain centralized so new commands automatically inherit
+	// traversal behavior without duplicating flag definitions.
 	listing.RegisterScopeFlags(rootCmd.PersistentFlags())
+}
+
+// NewRootCommand creates a fresh root command with all subcommands and flags registered.
+func NewRootCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "renamer",
+		Short: "Safe, scriptable batch renaming utility",
+		Long:  rootCmd.Long,
+	}
+
+	listing.RegisterScopeFlags(cmd.PersistentFlags())
+	cmd.AddCommand(newListCommand())
+	cmd.AddCommand(NewReplaceCommand())
+	cmd.AddCommand(newUndoCommand())
+
+	return cmd
 }

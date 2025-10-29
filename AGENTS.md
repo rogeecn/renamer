@@ -3,29 +3,41 @@
 Auto-generated from all feature plans. Last updated: 2025-10-29
 
 ## Active Technologies
-
+- Local filesystem (no persistent database) (002-add-replace-command)
 - Go 1.24 + `spf13/cobra`, `spf13/pflag` (001-list-command-filters)
 
 ## Project Structure
 
 ```text
-src/
+cmd/
+internal/
+scripts/
 tests/
 ```
 
 ## Commands
 
 - `renamer list` — preview rename scope with shared flags before executing changes.
-- Persistent scope flags: `--path`, `-r/--recursive`, `-d/--include-dirs`, `--hidden`, `--extensions`.
+- `renamer replace` — consolidate multiple literal patterns into a single replacement (supports `--dry-run` + `--yes`).
+- `renamer undo` — revert the most recent rename/replace batch using ledger entries.
+- Persistent scope flags: `--path`, `-r/--recursive`, `-d/--include-dirs`, `--hidden`, `--extensions`, `--yes`, `--dry-run`.
 
 ## Code Style
 
-Go 1.24: Follow standard conventions
+- Go 1.24: follow gofmt (already checked in CI)
+- Prefer composable packages under `internal/` for reusable logic
+- Keep CLI wiring thin; place business logic in services
+
+## Testing
+
+- `go test ./...`
+- Contract tests: `tests/contract/replace_command_test.go`
+- Integration tests: `tests/integration/replace_flow_test.go`
+- Smoke: `scripts/smoke-test-replace.sh`
 
 ## Recent Changes
-
-- 001-list-command-filters: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`
-- 001-list-command-filters: Introduced `renamer list` command with shared scope flags and formatters
+- 002-add-replace-command: Added `renamer replace` command, ledger metadata, and automation docs.
+- 001-list-command-filters: Added `renamer list` command with shared scope flags and formatters.
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

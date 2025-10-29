@@ -15,15 +15,19 @@ const (
 	flagIncludeDirs = "include-dirs"
 	flagHidden      = "hidden"
 	flagExtensions  = "extensions"
+	flagYes         = "yes"
+	flagDryRun      = "dry-run"
 )
 
 // RegisterScopeFlags defines persistent flags that scope listing, preview, and rename operations.
 func RegisterScopeFlags(flags *pflag.FlagSet) {
-    flags.String(flagPath, "", "Directory to inspect (defaults to current working directory)")
-    flags.BoolP(flagRecursive, "r", false, "Traverse subdirectories")
-    flags.BoolP(flagIncludeDirs, "d", false, "Include directories in results")
-    flags.Bool(flagHidden, false, "Include hidden files and directories")
-    flags.StringP(flagExtensions, "e", "", "Pipe-delimited list of extensions to include (e.g. .jpg|.png)")
+	flags.String(flagPath, "", "Directory to inspect (defaults to current working directory)")
+	flags.BoolP(flagRecursive, "r", false, "Traverse subdirectories")
+	flags.BoolP(flagIncludeDirs, "d", false, "Include directories in results")
+	flags.Bool(flagHidden, false, "Include hidden files and directories")
+	flags.StringP(flagExtensions, "e", "", "Pipe-delimited list of extensions to include (e.g. .jpg|.png)")
+	flags.Bool(flagYes, false, "Apply changes without interactive confirmation (mutating commands)")
+	flags.Bool(flagDryRun, false, "Force preview-only output without applying changes")
 }
 
 // ScopeFromCmd builds a ListingRequest populated from scope flags on the provided command.
