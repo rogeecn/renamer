@@ -48,9 +48,9 @@ description: "Task list template for feature implementation"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+- [ ] T001 Scaffold Cobra CLI command layout in `cmd/` per implementation plan
+- [ ] T002 Configure Go module dependencies (cobra, pflag) and shared config in `go.mod`
+- [ ] T003 [P] Establish `.renamer` ledger helpers in `internal/history/ledger.go`
 
 ---
 
@@ -62,12 +62,12 @@ description: "Task list template for feature implementation"
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
+- [ ] T004 Implement preview engine service in `internal/preview/service.go`
+- [ ] T005 [P] Implement ledger append and undo mechanics in `internal/history/undo.go`
+- [ ] T006 [P] Define rule interface and registry in `internal/rules/registry.go`
+- [ ] T007 Create traversal utilities supporting `-d`, `-r`, and extension filtering in `internal/traversal/walker.go`
+- [ ] T008 Configure structured logging and error handling for rename operations in `internal/logging/logger.go`
+- [ ] T009 Document CLI flag contract and validation rules (including `-e`) in `docs/cli-flags.md`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -83,17 +83,18 @@ Examples of foundational tasks (adjust based on your project):
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T010 [P] [US1] CLI preview contract test (covers extension filters) in `tests/contract/preview_test.go`
+- [ ] T011 [P] [US1] Integration test covering preview confirmation flow in `tests/integration/preview_flow_test.go`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+- [ ] T012 [P] [US1] Implement default rename rule in `internal/rules/default.go`
+- [ ] T013 [P] [US1] Implement extension filter parsing and validation in `internal/filters/extensions.go`
+- [ ] T014 [US1] Implement preview renderer in `internal/preview/format.go`
+- [ ] T015 [US1] Wire Cobra command to preview service and filters in `cmd/root.go` (depends on T012, T013, T014)
+- [ ] T016 [US1] Add confirmation prompt and dry-run guardrails in `cmd/root.go`
+- [ ] T017 [US1] Harden validation and conflict detection (including filter edge cases) in `internal/preview/validate.go`
+- [ ] T018 [US1] Emit structured preview logs in `internal/logging/logger.go`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -107,15 +108,15 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T019 [P] [US2] Ledger append/undo contract test in `tests/contract/ledger_test.go`
+- [ ] T020 [P] [US2] Integration test for undo workflow in `tests/integration/undo_flow_test.go`
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
-- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T021 [P] [US2] Create ledger persistence adapter in `internal/history/storage.go`
+- [ ] T022 [US2] Implement undo command wiring in `cmd/undo.go`
+- [ ] T023 [US2] Guard undo execution with validation in `internal/history/validate.go`
+- [ ] T024 [US2] Reuse preview output to display revert plan prior to undo
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -129,14 +130,14 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T025 [P] [US3] Recursion traversal contract test in `tests/contract/traversal_test.go`
+- [ ] T026 [P] [US3] Integration test for nested directory rename in `tests/integration/traversal_flow_test.go`
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
-- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T027 [P] [US3] Extend traversal walker to honor include/exclude patterns in `internal/traversal/filter.go`
+- [ ] T028 [US3] Implement directory rename rule enabling `-d` support in `internal/rules/directories.go`
+- [ ] T029 [US3] Update CLI to surface traversal options and help text in `cmd/root.go`
 
 **Checkpoint**: All user stories should now be independently functional
 

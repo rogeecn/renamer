@@ -72,8 +72,10 @@
   Fill them out with the right edge cases.
 -->
 
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
+- How does the rename plan handle conflicting target names or read-only files?
+- What is the expected behavior when the `.renamer` ledger is missing, corrupted, or out of sync?
+- How are case-only renames or Unicode normalization differences managed across platforms?
+- What feedback is provided when an extension filter yields zero matches or contains invalid tokens?
 
 ## Requirements *(mandatory)*
 
@@ -84,21 +86,22 @@
 
 ### Functional Requirements
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- **FR-001**: CLI MUST generate a deterministic preview of all pending renames before execution.
+- **FR-002**: Users MUST confirm the preview (or abort) prior to any filesystem changes.
+- **FR-003**: The tool MUST append every confirmed batch to the `.renamer` ledger with sufficient metadata for undo.
+- **FR-004**: Users MUST be able to undo the most recent batch safely, even across process restarts.
+- **FR-005**: CLI MUST support directory targeting (`-d`) and optional recursive traversal (`-r`) with clear scope boundaries.
+- **FR-006**: CLI MUST accept an extension filter flag (`-e`) that parses `.`-prefixed, `|`-delimited extensions and applies the filter consistently across preview, execute, and undo flows.
 
 *Example of marking unclear requirements:*
 
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+- **FR-007**: CLI MUST support additional rename rule `[RULE_NAME]` [NEEDS CLARIFICATION: inputs/outputs not defined]
+- **FR-008**: CLI MUST expose automation-friendly output [NEEDS CLARIFICATION: format (JSON, plain text) undecided]
 
 ### Key Entities *(include if feature involves data)*
 
-- **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
+- **RenameBatch**: Represents a single preview/execute cycle; attributes include rules applied, timestamp, working directory, and file mappings.
+- **RuleDefinition**: Captures configuration for a rename rule (inputs, validations, dependencies) without binding to implementation.
 
 ## Success Criteria *(mandatory)*
 

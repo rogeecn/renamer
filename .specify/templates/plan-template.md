@@ -31,7 +31,11 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- Preview flow MUST show deterministic rename mappings and require explicit confirmation (Preview-First Safety).
+- Undo strategy MUST describe how the `.renamer` ledger entry is written and reversed (Persistent Undo Ledger).
+- Planned rename rules MUST document their inputs, validations, and composing order (Composable Rule Engine).
+- Scope handling MUST cover files vs directories (`-d`), recursion (`-r`), and extension filtering via `-e` without escaping the requested path (Scope-Aware Traversal).
+- CLI UX plan MUST confirm Cobra usage, flag naming, help text, and automated tests for preview/undo flows (Ergonomic CLI Stewardship).
 
 ## Project Structure
 
