@@ -1,0 +1,23 @@
+# Build artifacts
+*.exe
+*.out
+*.test
+
+# Dependency directories
+vendor/
+
+# IDE and editor clutter
+.vscode/
+.idea/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+
+# Environment files
+.env
+.env.*
