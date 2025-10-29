@@ -5,6 +5,7 @@ Auto-generated from all feature plans. Last updated: 2025-10-29
 ## Active Technologies
 - Local filesystem (no persistent database) (002-add-replace-command)
 - Go 1.24 + `spf13/cobra`, `spf13/pflag` (001-list-command-filters)
+- Local filesystem only (ledger persisted as `.renamer`) (003-add-remove-command)
 
 ## Project Structure
 
@@ -36,6 +37,7 @@ tests/
 - Smoke: `scripts/smoke-test-replace.sh`
 
 ## Recent Changes
+- 003-add-remove-command: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`
 - 002-add-replace-command: Added `renamer replace` command, ledger metadata, and automation docs.
 - 001-list-command-filters: Added `renamer list` command with shared scope flags and formatters.
 
