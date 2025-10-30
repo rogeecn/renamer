@@ -29,12 +29,25 @@ func newUndoCommand() *cobra.Command {
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Undo applied: %d operations reversed\n", len(entry.Operations))
 
-			if entry.Command == "extension" && entry.Metadata != nil {
-				if target, ok := entry.Metadata["targetExtension"].(string); ok && target != "" {
-					fmt.Fprintf(out, "Restored extensions to %s\n", target)
-				}
-				if sources, ok := entry.Metadata["sourceExtensions"].([]string); ok && len(sources) > 0 {
-					fmt.Fprintf(out, "Previous sources: %s\n", strings.Join(sources, ", "))
+			if entry.Metadata != nil {
+				switch entry.Command {
+				case "extension":
+					if target, ok := entry.Metadata["targetExtension"].(string); ok && target != "" {
+						fmt.Fprintf(out, "Restored extensions to %s\n", target)
+					}
+					if sources, ok := entry.Metadata["sourceExtensions"].([]string); ok && len(sources) > 0 {
+						fmt.Fprintf(out, "Previous sources: %s\n", strings.Join(sources, ", "))
+					}
+				case "insert":
+					insertText, _ := entry.Metadata["insertText"].(string)
+					positionToken, _ := entry.Metadata["positionToken"].(string)
+					if insertText != "" {
+						if positionToken != "" {
+							fmt.Fprintf(out, "Inserted text %q removed from position %s\n", insertText, positionToken)
+						} else {
+							fmt.Fprintf(out, "Inserted text %q removed\n", insertText)
+						}
+					}
 				}
 			}
 

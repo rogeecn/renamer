@@ -1,0 +1,243 @@
+openapi: 3.1.0
+info:
+  title: Renamer Insert Command API
+  version: 0.1.0
+  description: >
+    Contract representation of the `renamer insert` command workflows (preview/apply/undo)
+    for automation harnesses and documentation parity.
+servers:
+  - url: cli://renamer
+    description: Command-line invocation surface
+paths:
+  /insert/preview:
+    post:
+      summary: Preview insert operations
+      description: Mirrors `renamer insert <position> <text> --dry-run`
+      operationId: previewInsert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InsertRequest'
+      responses:
+        '200':
+          description: Successful preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsertPreview'
+        '400':
+          description: Validation error (invalid position, empty text, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /insert/apply:
+    post:
+      summary: Apply insert operations
+      description: Mirrors `renamer insert <position> <text> --yes`
+      operationId: applyInsert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/InsertRequest'
+                - type: object
+                  properties:
+                    dryRun:
+                      type: boolean
+                      const: false
+      responses:
+        '200':
+          description: Apply succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsertApplyResult'
+        '409':
+          description: Conflict detected (duplicate targets, existing files)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /insert/undo:
+    post:
+      summary: Undo latest insert batch
+      description: Mirrors `renamer undo` when last ledger entry corresponds to insert command.
+      operationId: undoInsert
+      responses:
+        '200':
+          description: Undo succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UndoResult'
+        '409':
+          description: Ledger inconsistent or no insert entry found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    InsertRequest:
+      type: object
+      required:
+        - workingDir
+        - positionToken
+        - insertText
+      properties:
+        workingDir:
+          type: string
+        positionToken:
+          type: string
+          description: '^', '$', positive integer, or negative integer.
+        insertText:
+          type: string
+          description: Unicode string to insert (must not contain path separators).
+        includeDirs:
+          type: boolean
+          default: false
+        recursive:
+          type: boolean
+          default: false
+        includeHidden:
+          type: boolean
+          default: false
+        extensionFilter:
+          type: array
+          items:
+            type: string
+        dryRun:
+          type: boolean
+          default: true
+        autoConfirm:
+          type: boolean
+          default: false
+    InsertPreview:
+      type: object
+      required:
+        - totalCandidates
+        - totalChanged
+        - noChange
+        - entries
+      properties:
+        totalCandidates:
+          type: integer
+          minimum: 0
+        totalChanged:
+          type: integer
+          minimum: 0
+        noChange:
+          type: integer
+          minimum: 0
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conflict'
+        warnings:
+          type: array
+          items:
+            type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreviewEntry'
+    InsertApplyResult:
+      type: object
+      required:
+        - totalApplied
+        - noChange
+        - ledgerEntryId
+      properties:
+        totalApplied:
+          type: integer
+          minimum: 0
+        noChange:
+          type: integer
+          minimum: 0
+        ledgerEntryId:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+    UndoResult:
+      type: object
+      required:
+        - restored
+        - ledgerEntryId
+      properties:
+        restored:
+          type: integer
+        ledgerEntryId:
+          type: string
+        message:
+          type: string
+    Conflict:
+      type: object
+      required:
+        - originalPath
+        - proposedPath
+        - reason
+      properties:
+        originalPath:
+          type: string
+        proposedPath:
+          type: string
+        reason:
+          type: string
+          enum:
+            - duplicate_target
+            - invalid_position
+            - existing_file
+            - existing_directory
+    PreviewEntry:
+      type: object
+      required:
+        - originalPath
+        - proposedPath
+        - status
+      properties:
+        originalPath:
+          type: string
+        proposedPath:
+          type: string
+        status:
+          type: string
+          enum:
+            - changed
+            - no_change
+            - skipped
+        insertedText:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        remediation:
+          type: string
+    ConflictResponse:
+      type: object
+      required:
+        - error
+        - conflicts
+      properties:
+        error:
+          type: string
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conflict'

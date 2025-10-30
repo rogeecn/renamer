@@ -8,6 +8,7 @@ Auto-generated from all feature plans. Last updated: 2025-10-29
 - Local filesystem only (ledger persisted as `.renamer`) (003-add-remove-command)
 - Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/ledger packages (004-extension-rename)
 - Local filesystem + `.renamer` ledger files (004-extension-rename)
+- Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/history/output packages (005-add-insert-command)
 
 ## Project Structure
 
@@ -40,9 +41,9 @@ tests/
 - Smoke: `scripts/smoke-test-replace.sh`, `scripts/smoke-test-remove.sh`
 
 ## Recent Changes
+- 005-add-insert-command: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/history/output packages
 - 004-extension-rename: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/ledger packages
 - 003-add-remove-command: Added sequential `renamer remove` subcommand, automation-friendly ledger metadata, and CLI warnings for duplicates/empty results
-- 002-add-replace-command: Added `renamer replace` command, ledger metadata, and automation docs.
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
