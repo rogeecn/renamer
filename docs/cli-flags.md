@@ -71,3 +71,28 @@ renamer remove <token1> [token2 ...] [flags]
 - Preview sequential removals: `renamer remove " copy" " draft" --dry-run`
 - Remove tokens recursively: `renamer remove foo foo- --recursive --path ./reports`
 - Combine with extension filters: `renamer remove " Project" --extensions .txt|.md --dry-run`
+
+## Extension Command Quick Reference
+
+```bash
+renamer extension <source-ext...> <target-ext> [flags]
+```
+
+- Provide one or more dot-prefixed source extensions followed by the target extension. Validation
+  fails if any token omits the leading dot or repeats the target exactly.
+- Source extensions are normalized case-insensitively; duplicates and no-op tokens are surfaced as
+  warnings in the preview rather than silently ignored.
+- Preview output lists every candidate with `changed`, `no change`, or `skipped` status so scripts
+  can detect conflicts before applying. Conflicting targets block apply and exit with a non-zero
+  code.
+- Scope flags (`--path`, `-r`, `-d`, `--hidden`, `--extensions`) determine which files and
+  directories participate. Hidden assets remain excluded unless `--hidden` is supplied.
+- `--dry-run` (default) prints the plan without touching the filesystem. Re-run with `--yes` to
+  apply; attempting to combine both flags exits with an error. When no files match, the command
+  exits `0` after printing “No candidates found.”
+
+### Usage Examples
+
+- Preview normalization: `renamer extension .jpeg .JPG .jpg --dry-run`
+- Apply case-folded extension updates: `renamer extension .yaml .yml .yml --yes --path ./configs`
+- Include hidden assets recursively: `renamer extension .TMP .tmp --recursive --hidden`

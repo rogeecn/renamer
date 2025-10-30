@@ -1,0 +1,248 @@
+openapi: 3.1.0
+info:
+  title: Renamer Extension Command API
+  version: 0.1.0
+  description: >
+    Contract representation of the `renamer extension` command workflows (preview/apply/undo)
+    for testing harnesses and documentation parity.
+servers:
+  - url: cli://renamer
+    description: Command-line invocation surface
+paths:
+  /extension/preview:
+    post:
+      summary: Preview extension normalization results
+      description: Mirrors `renamer extension [source-ext...] [target-ext] --dry-run`
+      operationId: previewExtension
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtensionRequest'
+      responses:
+        '200':
+          description: Successful preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtensionPreview'
+        '400':
+          description: Validation error (invalid extensions, missing arguments)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /extension/apply:
+    post:
+      summary: Apply extension normalization
+      description: Mirrors `renamer extension [source-ext...] [target-ext] --yes`
+      operationId: applyExtension
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ExtensionRequest'
+                - type: object
+                  properties:
+                    dryRun:
+                      type: boolean
+                      const: false
+      responses:
+        '200':
+          description: Successful apply (may include no-change entries)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtensionApplyResult'
+        '409':
+          description: Conflict detected; apply refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponse'
+        '400':
+          description: Validation error (invalid extensions, missing arguments)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /extension/undo:
+    post:
+      summary: Undo the most recent extension batch
+      description: Mirrors `renamer undo` when last ledger entry was from extension command.
+      operationId: undoExtension
+      responses:
+        '200':
+          description: Undo succeeded and ledger updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UndoResult'
+        '409':
+          description: Ledger inconsistent or missing entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ExtensionRequest:
+      type: object
+      required:
+        - workingDir
+        - sourceExtensions
+        - targetExtension
+      properties:
+        workingDir:
+          type: string
+          description: Absolute path for command scope.
+        sourceExtensions:
+          type: array
+          description: Ordered list of dot-prefixed extensions to normalize (case-insensitive uniqueness).
+          minItems: 1
+          items:
+            type: string
+            pattern: '^\\.[\\w\\-]+$'
+        targetExtension:
+          type: string
+          description: Dot-prefixed extension applied to all matches.
+          pattern: '^\\.[\\w\\-]+$'
+        includeDirs:
+          type: boolean
+          default: false
+        recursive:
+          type: boolean
+          default: false
+        includeHidden:
+          type: boolean
+          default: false
+        extensionFilter:
+          type: array
+          items:
+            type: string
+            pattern: '^\\.[\\w\\-]+$'
+        dryRun:
+          type: boolean
+          default: true
+        autoConfirm:
+          type: boolean
+          default: false
+    ExtensionPreview:
+      type: object
+      required:
+        - totalCandidates
+        - totalChanged
+        - noChange
+        - entries
+      properties:
+        totalCandidates:
+          type: integer
+          minimum: 0
+        totalChanged:
+          type: integer
+          minimum: 0
+        noChange:
+          type: integer
+          minimum: 0
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conflict'
+        warnings:
+          type: array
+          items:
+            type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreviewEntry'
+    ExtensionApplyResult:
+      type: object
+      required:
+        - totalApplied
+        - noChange
+        - ledgerEntryId
+      properties:
+        totalApplied:
+          type: integer
+          minimum: 0
+        noChange:
+          type: integer
+          minimum: 0
+        ledgerEntryId:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+    UndoResult:
+      type: object
+      required:
+        - restored
+        - ledgerEntryId
+      properties:
+        restored:
+          type: integer
+        ledgerEntryId:
+          type: string
+        message:
+          type: string
+    Conflict:
+      type: object
+      required:
+        - originalPath
+        - proposedPath
+        - reason
+      properties:
+        originalPath:
+          type: string
+        proposedPath:
+          type: string
+        reason:
+          type: string
+          enum:
+            - duplicate_target
+            - existing_file
+    PreviewEntry:
+      type: object
+      required:
+        - originalPath
+        - proposedPath
+        - status
+      properties:
+        originalPath:
+          type: string
+        proposedPath:
+          type: string
+        status:
+          type: string
+          enum:
+            - changed
+            - no_change
+            - skipped
+        sourceExtension:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        remediation:
+          type: string
+    ConflictResponse:
+      type: object
+      required:
+        - error
+        - conflicts
+      properties:
+        error:
+          type: string
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conflict'

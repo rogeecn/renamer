@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -25,7 +26,18 @@ func newUndoCommand() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Undo applied: %d operations reversed\n", len(entry.Operations))
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "Undo applied: %d operations reversed\n", len(entry.Operations))
+
+			if entry.Command == "extension" && entry.Metadata != nil {
+				if target, ok := entry.Metadata["targetExtension"].(string); ok && target != "" {
+					fmt.Fprintf(out, "Restored extensions to %s\n", target)
+				}
+				if sources, ok := entry.Metadata["sourceExtensions"].([]string); ok && len(sources) > 0 {
+					fmt.Fprintf(out, "Previous sources: %s\n", strings.Join(sources, ", "))
+				}
+			}
+
 			return nil
 		},
 	}
