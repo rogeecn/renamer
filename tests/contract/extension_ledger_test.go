@@ -37,24 +37,12 @@ func TestExtensionApplyMetadataCaptured(t *testing.T) {
 	req := extension.NewRequest(scope)
 	req.SetExecutionMode(true, false)
 
-	sources := []string{".jpeg", ".JPG", ".jpg"}
-	canonical, display, duplicates := extension.NormalizeSourceExtensions(sources)
-	target := extension.NormalizeTargetExtension(".jpg")
-	targetCanonical := extension.CanonicalExtension(target)
-
-	filteredCanonical := make([]string, 0, len(canonical))
-	filteredDisplay := make([]string, 0, len(display))
-	noOps := make([]string, 0)
-	for i, canon := range canonical {
-		if canon == targetCanonical {
-			noOps = append(noOps, display[i])
-			continue
-		}
-		filteredCanonical = append(filteredCanonical, canon)
-		filteredDisplay = append(filteredDisplay, display[i])
+	parsed, err := extension.ParseArgs([]string{".jpeg", ".JPG", ".jpg"})
+	if err != nil {
+		t.Fatalf("parse args: %v", err)
 	}
-	req.SetExtensions(filteredCanonical, filteredDisplay, target)
-	req.SetWarnings(duplicates, noOps)
+	req.SetExtensions(parsed.SourcesCanonical, parsed.SourcesDisplay, parsed.Target)
+	req.SetWarnings(parsed.Duplicates, parsed.NoOps)
 
 	summary, planned, err := extension.Preview(context.Background(), req, nil)
 	if err != nil {
@@ -72,15 +60,15 @@ func TestExtensionApplyMetadataCaptured(t *testing.T) {
 	}
 
 	sourcesMeta, ok := entry.Metadata["sourceExtensions"].([]string)
-	if !ok || len(sourcesMeta) != len(filteredDisplay) {
+	if !ok || len(sourcesMeta) != len(parsed.SourcesDisplay) {
 		t.Fatalf("sourceExtensions metadata mismatch: %#v", entry.Metadata["sourceExtensions"])
 	}
-	if sourcesMeta[0] != ".jpeg" {
-		t.Fatalf("expected .jpeg in source metadata, got %v", sourcesMeta)
+	if sourcesMeta[0] != parsed.SourcesDisplay[0] || sourcesMeta[1] != parsed.SourcesDisplay[1] {
+		t.Fatalf("expected display sources preserved in metadata, got %v", sourcesMeta)
 	}
 
 	targetMeta, ok := entry.Metadata["targetExtension"].(string)
-	if !ok || targetMeta != target {
+	if !ok || targetMeta != parsed.Target {
 		t.Fatalf("targetExtension metadata mismatch: %v", targetMeta)
 	}
 
@@ -107,13 +95,8 @@ func TestExtensionApplyMetadataCaptured(t *testing.T) {
 		t.Fatalf("includeHidden should be false, got %v", includeHidden)
 	}
 
-	warnings, ok := entry.Metadata["warnings"].([]string)
-	if !ok || len(warnings) == 0 {
-		t.Fatalf("warnings metadata missing: %#v", entry.Metadata["warnings"])
-	}
-	joined := strings.Join(warnings, " ")
-	if !strings.Contains(joined, "duplicate source extension") {
-		t.Fatalf("expected duplicate warning in metadata: %v", warnings)
+	if _, ok := entry.Metadata["warnings"]; ok {
+		t.Fatalf("did not expect warnings metadata when no duplicates were provided: %#v", entry.Metadata["warnings"])
 	}
 
 	ledger := filepath.Join(tmp, ".renamer")

@@ -28,20 +28,29 @@ func TestParseArgsValidation(t *testing.T) {
 		}
 	}
 
-	_, err := extension.ParseArgs([]string{".jpg", ".JPG"})
-	if err == nil {
-		t.Fatalf("expected error when all sources match target")
+	if _, err := extension.ParseArgs([]string{".jpg", ".jpg"}); err == nil {
+		t.Fatalf("expected error when source exactly matches target")
+	}
+
+	if _, err := extension.ParseArgs([]string{".jpg", ".JPG"}); err != nil {
+		t.Fatalf("expected case-variant source to be accepted: %v", err)
 	}
 
 	parsed, err := extension.ParseArgs([]string{".jpeg", ".JPG", ".jpg"})
 	if err != nil {
 		t.Fatalf("unexpected error for valid args: %v", err)
 	}
-	if len(parsed.SourcesCanonical) != 1 || parsed.SourcesCanonical[0] != ".jpeg" {
-		t.Fatalf("expected canonical list to contain .jpeg only, got %#v", parsed.SourcesCanonical)
+	if len(parsed.SourcesCanonical) != 2 {
+		t.Fatalf("expected canonical list to contain two entries, got %#v", parsed.SourcesCanonical)
 	}
-	if len(parsed.NoOps) != 1 {
-		t.Fatalf("expected .jpg to be treated as no-op")
+	if parsed.SourcesCanonical[0] != ".jpeg" || parsed.SourcesCanonical[1] != ".jpg" {
+		t.Fatalf("unexpected canonical ordering: %#v", parsed.SourcesCanonical)
+	}
+	if len(parsed.SourcesDisplay) != 2 || parsed.SourcesDisplay[1] != ".JPG" {
+		t.Fatalf("expected display list to preserve .JPG, got %#v", parsed.SourcesDisplay)
+	}
+	if len(parsed.NoOps) != 0 {
+		t.Fatalf("expected no-ops to be empty, got %#v", parsed.NoOps)
 	}
 }
 

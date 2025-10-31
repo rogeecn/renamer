@@ -37,29 +37,12 @@ func TestExtensionPreviewAndApply(t *testing.T) {
 	req := extension.NewRequest(scope)
 	req.SetExecutionMode(true, false)
 
-	sources := []string{".jpeg", ".JPG", ".jpg"}
-	canonical, display, duplicates := extension.NormalizeSourceExtensions(sources)
-	target := extension.NormalizeTargetExtension(".jpg")
-	targetCanonical := extension.CanonicalExtension(target)
-
-	filteredCanonical := make([]string, 0, len(canonical))
-	filteredDisplay := make([]string, 0, len(display))
-	noOps := make([]string, 0)
-	for i, canon := range canonical {
-		if canon == targetCanonical {
-			noOps = append(noOps, display[i])
-			continue
-		}
-		filteredCanonical = append(filteredCanonical, canon)
-		filteredDisplay = append(filteredDisplay, display[i])
+	parsed, err := extension.ParseArgs([]string{".jpeg", ".JPG", ".jpg"})
+	if err != nil {
+		t.Fatalf("parse args: %v", err)
 	}
-
-	if len(filteredCanonical) == 0 {
-		t.Fatalf("expected canonical sources after filtering")
-	}
-
-	req.SetExtensions(filteredCanonical, filteredDisplay, target)
-	req.SetWarnings(duplicates, noOps)
+	req.SetExtensions(parsed.SourcesCanonical, parsed.SourcesDisplay, parsed.Target)
+	req.SetWarnings(parsed.Duplicates, parsed.NoOps)
 
 	var buf bytes.Buffer
 	summary, planned, err := extension.Preview(context.Background(), req, &buf)
@@ -94,8 +77,8 @@ func TestExtensionPreviewAndApply(t *testing.T) {
 		t.Fatalf("expected summary line, output: %s", output)
 	}
 
-	if len(summary.Warnings) == 0 {
-		t.Fatalf("expected warnings for duplicates/no-ops")
+	if len(summary.Warnings) != 0 {
+		t.Fatalf("did not expect preview warnings, got %#v", summary.Warnings)
 	}
 
 	req.SetExecutionMode(false, true)
@@ -123,6 +106,77 @@ func TestExtensionPreviewAndApply(t *testing.T) {
 	ledger := filepath.Join(tmp, ".renamer")
 	if _, err := os.Stat(ledger); err != nil {
 		t.Fatalf("expected ledger file to be created: %v", err)
+	}
+}
+
+func TestExtensionSkipsCaseVariantsWithoutSource(t *testing.T) {
+	t.Parallel()
+
+	tmp := t.TempDir()
+	writeTestFile(t, filepath.Join(tmp, "photo.jpeg"))
+	writeTestFile(t, filepath.Join(tmp, "poster.JPG"))
+	writeTestFile(t, filepath.Join(tmp, "logo.jpg"))
+
+	scope := &listing.ListingRequest{
+		WorkingDir:         tmp,
+		IncludeDirectories: false,
+		Recursive:          false,
+		IncludeHidden:      false,
+		Extensions:         nil,
+		Format:             listing.FormatTable,
+	}
+	if err := scope.Validate(); err != nil {
+		t.Fatalf("validate scope: %v", err)
+	}
+
+	req := extension.NewRequest(scope)
+	req.SetExecutionMode(true, false)
+
+	parsed, err := extension.ParseArgs([]string{".jpeg", ".jpg"})
+	if err != nil {
+		t.Fatalf("parse args: %v", err)
+	}
+	req.SetExtensions(parsed.SourcesCanonical, parsed.SourcesDisplay, parsed.Target)
+	req.SetWarnings(parsed.Duplicates, parsed.NoOps)
+
+	var buf bytes.Buffer
+	summary, planned, err := extension.Preview(context.Background(), req, &buf)
+	if err != nil {
+		t.Fatalf("preview error: %v", err)
+	}
+
+	if summary.TotalCandidates != 2 {
+		t.Fatalf("expected 2 candidates, got %d", summary.TotalCandidates)
+	}
+	if summary.TotalChanged != 1 {
+		t.Fatalf("expected 1 changed entry, got %d", summary.TotalChanged)
+	}
+	if summary.NoChange != 1 {
+		t.Fatalf("expected 1 no-change entry, got %d", summary.NoChange)
+	}
+	if len(planned) != 1 {
+		t.Fatalf("expected exactly one planned rename, got %d", len(planned))
+	}
+
+	output := buf.String()
+	if strings.Contains(output, "poster.JPG -> poster.jpg") {
+		t.Fatalf("expected poster.JPG to be excluded from plan, output: %s", output)
+	}
+
+	req.SetExecutionMode(false, true)
+	entry, err := extension.Apply(context.Background(), req, planned, summary)
+	if err != nil {
+		t.Fatalf("apply error: %v", err)
+	}
+	if len(entry.Operations) != len(planned) {
+		t.Fatalf("expected %d ledger operations, got %d", len(planned), len(entry.Operations))
+	}
+
+	if _, err := os.Stat(filepath.Join(tmp, "photo.jpg")); err != nil {
+		t.Fatalf("expected photo.jpg after apply: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "poster.JPG")); err != nil {
+		t.Fatalf("expected poster.JPG to remain unchanged: %v", err)
 	}
 }
 

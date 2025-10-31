@@ -55,7 +55,7 @@ func ParseArgs(args []string) (ParseResult, error) {
 	filteredDisplay := make([]string, 0, len(display))
 	noOps := make([]string, 0)
 	for i, canon := range canonical {
-		if canon == targetCanonical {
+		if canon == targetCanonical && display[i] == target {
 			noOps = append(noOps, display[i])
 			continue
 		}

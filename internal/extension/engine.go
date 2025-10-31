@@ -48,13 +48,6 @@ func BuildPlan(ctx context.Context, req *ExtensionRequest) (*PlanResult, error) 
 		sourceSet[CanonicalExtension(source)] = struct{}{}
 	}
 
-	// Include the target extension so preview surfaces existing matches as no-ops.
-	matchable := make(map[string]struct{}, len(sourceSet)+1)
-	for ext := range sourceSet {
-		matchable[ext] = struct{}{}
-	}
-	matchable[targetCanonical] = struct{}{}
-
 	filterSet := make(map[string]struct{}, len(req.ExtensionFilter))
 	for _, filter := range req.ExtensionFilter {
 		filterSet[CanonicalExtension(filter)] = struct{}{}
@@ -94,7 +87,10 @@ func BuildPlan(ctx context.Context, req *ExtensionRequest) (*PlanResult, error) 
 				}
 			}
 
-			if _, ok := matchable[canonicalExt]; !ok {
+			_, sourceMatch := sourceSet[canonicalExt]
+			targetMatch := canonicalExt == targetCanonical && rawExt == targetExt
+
+			if !sourceMatch && !targetMatch {
 				return nil
 			}
 
@@ -105,7 +101,7 @@ func BuildPlan(ctx context.Context, req *ExtensionRequest) (*PlanResult, error) 
 			targetRelative := relative
 			targetAbsolute := originalAbsolute
 
-			if canonicalExt == targetCanonical && rawExt == targetExt {
+			if targetMatch {
 				status = PreviewStatusNoChange
 			}
 

@@ -87,6 +87,9 @@ renamer extension <source-ext...> <target-ext> [flags]
   fails if any token omits the leading dot or repeats the target exactly.
 - Source extensions are normalized case-insensitively; duplicates and no-op tokens are surfaced as
   warnings in the preview rather than silently ignored.
+- Case variants of the target extension (for example `.JPG` when targeting `.jpg`) remain untouched
+  unless you include them in the source list, ensuring casing changes happen only when explicitly
+  requested.
 - Preview output lists every candidate with `changed`, `no change`, or `skipped` status so scripts
   can detect conflicts before applying. Conflicting targets block apply and exit with a non-zero
   code.
