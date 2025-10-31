@@ -15,6 +15,23 @@ filesystem. Use these options at the root command level so they apply to all sub
 | `--dry-run` | `false` | Force preview-only behavior even when `--yes` is supplied. |
 | `--format` | `table` | Command-specific output formatting option. For `list`, use `table` or `plain`. |
 
+## Regex Command Quick Reference
+
+```bash
+renamer regex <pattern> <template> [flags]
+```
+
+- Patterns compile with Go’s RE2 engine and are matched against filename stems; invalid expressions fail fast with helpful errors.
+- Templates support numbered placeholders (`@0`, `@1`, …) along with escaped `@@` for literal at-signs; undefined captures block the run.
+- Preview mode (`--dry-run`, default) renders the rename plan with change/skipped/conflict statuses; apply with `--yes` writes a ledger entry for undo.
+- Scope flags (`--path`, `-r`, `-d`, `--hidden`, `--extensions`) control candidate discovery just like other commands, and conflicts or empty targets exit non-zero.
+
+### Usage Examples
+
+- Preview captured group swapping: `renamer regex "^(\w+)-(\d+)" "@2_@1" --dry-run --path ./samples`
+- Limit by extensions and directories: `renamer regex '^(build)_(\d+)_v(.*)$' 'release-@2-@1-v@3' --extensions .zip|.tar.gz --include-dirs --recursive`
+- Automation-friendly apply with undo: `renamer regex '^(feature)-(.*)$' '@2-@1' --yes --path ./staging && renamer undo --path ./staging`
+
 ## Insert Command Quick Reference
 
 ```bash

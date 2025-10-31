@@ -1,0 +1,248 @@
+openapi: 3.1.0
+info:
+  title: Renamer Regex Command API
+  version: 0.1.0
+  description: >
+    Contract representation of the `renamer regex` command workflows (preview/apply/undo)
+    for automation harnesses and documentation parity.
+servers:
+  - url: cli://renamer
+    description: Command-line invocation surface
+paths:
+  /regex/preview:
+    post:
+      summary: Preview regex-based rename results
+      description: Mirrors `renamer regex <pattern> <template> --dry-run`
+      operationId: previewRegex
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegexRequest'
+      responses:
+        '200':
+          description: Successful preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegexPreview'
+        '400':
+          description: Validation error (invalid pattern, undefined placeholders)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /regex/apply:
+    post:
+      summary: Apply regex-based renaming
+      description: Mirrors `renamer regex <pattern> <template> --yes`
+      operationId: applyRegex
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/RegexRequest'
+                - type: object
+                  properties:
+                    dryRun:
+                      type: boolean
+                      const: false
+      responses:
+        '200':
+          description: Apply succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegexApplyResult'
+        '409':
+          description: Conflict detected (duplicate targets, existing files)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponse'
+        '400':
+          description: Validation error (invalid pattern/template)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /regex/undo:
+    post:
+      summary: Undo the latest regex rename batch
+      description: Mirrors `renamer undo` when the last ledger entry corresponds to a regex command.
+      operationId: undoRegex
+      responses:
+        '200':
+          description: Undo succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UndoResult'
+        '409':
+          description: Ledger inconsistent or no regex entry found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    RegexRequest:
+      type: object
+      required:
+        - workingDir
+        - pattern
+        - template
+      properties:
+        workingDir:
+          type: string
+        pattern:
+          type: string
+          description: RE2-compatible regular expression applied to filename stem.
+        template:
+          type: string
+          description: Replacement template supporting placeholders `@0..@n`.
+        includeDirs:
+          type: boolean
+          default: false
+        recursive:
+          type: boolean
+          default: false
+        includeHidden:
+          type: boolean
+          default: false
+        extensionFilter:
+          type: array
+          items:
+            type: string
+        dryRun:
+          type: boolean
+          default: true
+        autoConfirm:
+          type: boolean
+          default: false
+    RegexPreview:
+      type: object
+      required:
+        - totalCandidates
+        - matched
+        - changed
+        - entries
+      properties:
+        totalCandidates:
+          type: integer
+          minimum: 0
+        matched:
+          type: integer
+          minimum: 0
+        changed:
+          type: integer
+          minimum: 0
+        skipped:
+          type: integer
+          minimum: 0
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conflict'
+        warnings:
+          type: array
+          items:
+            type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreviewEntry'
+    RegexApplyResult:
+      type: object
+      required:
+        - totalApplied
+        - skipped
+        - ledgerEntryId
+      properties:
+        totalApplied:
+          type: integer
+          minimum: 0
+        skipped:
+          type: integer
+          minimum: 0
+        ledgerEntryId:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+    UndoResult:
+      type: object
+      required:
+        - restored
+        - ledgerEntryId
+      properties:
+        restored:
+          type: integer
+        ledgerEntryId:
+          type: string
+        message:
+          type: string
+    Conflict:
+      type: object
+      required:
+        - originalPath
+        - proposedPath
+        - reason
+      properties:
+        originalPath:
+          type: string
+        proposedPath:
+          type: string
+        reason:
+          type: string
+          enum:
+            - duplicate_target
+            - existing_file
+            - existing_directory
+            - invalid_template
+    PreviewEntry:
+      type: object
+      required:
+        - originalPath
+        - proposedPath
+        - status
+      properties:
+        originalPath:
+          type: string
+        proposedPath:
+          type: string
+        status:
+          type: string
+          enum:
+            - changed
+            - no_change
+            - skipped
+        matchGroups:
+          type: array
+          items:
+            type: string
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        remediation:
+          type: string
+    ConflictResponse:
+      type: object
+      required:
+        - error
+        - conflicts
+      properties:
+        error:
+          type: string
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conflict'

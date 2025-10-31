@@ -2,7 +2,6 @@ package integration
 
 import (
 	"bytes"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -33,7 +32,7 @@ func TestRemoveCommandAutomationUndo(t *testing.T) {
 		t.Fatalf("apply failed: %v\noutput: %s", err, applyOut.String())
 	}
 
-	if !fileExists(filepath.Join(tmp, "alpha.txt")) || !fileExists(filepath.Join(tmp, "nested", "beta.txt")) {
+	if !fileExistsTestHelper(filepath.Join(tmp, "alpha.txt")) || !fileExistsTestHelper(filepath.Join(tmp, "nested", "beta.txt")) {
 		t.Fatalf("expected files renamed after apply")
 	}
 
@@ -46,12 +45,7 @@ func TestRemoveCommandAutomationUndo(t *testing.T) {
 		t.Fatalf("undo failed: %v\noutput: %s", err, undoOut.String())
 	}
 
-	if !fileExists(filepath.Join(tmp, "alpha copy.txt")) || !fileExists(filepath.Join(tmp, "nested", "beta draft.txt")) {
+	if !fileExistsTestHelper(filepath.Join(tmp, "alpha copy.txt")) || !fileExistsTestHelper(filepath.Join(tmp, "nested", "beta draft.txt")) {
 		t.Fatalf("expected originals restored after undo")
 	}
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
 }

@@ -48,6 +48,13 @@ func newUndoCommand() *cobra.Command {
 							fmt.Fprintf(out, "Inserted text %q removed\n", insertText)
 						}
 					}
+				case "regex":
+					if pattern, ok := entry.Metadata["pattern"].(string); ok && pattern != "" {
+						fmt.Fprintf(out, "Reverted regex pattern %q\n", pattern)
+					}
+					if template, ok := entry.Metadata["template"].(string); ok && template != "" {
+						fmt.Fprintf(out, "Template restored to %q\n", template)
+					}
 				}
 			}
 
