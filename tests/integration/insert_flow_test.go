@@ -48,6 +48,30 @@ func TestInsertCommandFlow(t *testing.T) {
 	}
 }
 
+func TestInsertCommandTailOffsetToken(t *testing.T) {
+	t.Parallel()
+
+	tmp := t.TempDir()
+	createInsertFile(t, filepath.Join(tmp, "demo.txt"))
+
+	var out bytes.Buffer
+	cmd := renamercmd.NewRootCommand()
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{"insert", "1$", "_TAIL", "--yes", "--path", tmp})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("insert command failed: %v\noutput: %s", err, out.String())
+	}
+
+	if _, err := os.Stat(filepath.Join(tmp, "dem_TAILo.txt")); err != nil {
+		t.Fatalf("expected dem_TAILo.txt after apply: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "demo.txt")); !os.IsNotExist(err) {
+		t.Fatalf("expected original demo.txt to be renamed, err=%v", err)
+	}
+}
+
 func contains(t *testing.T, haystack string, expected ...string) bool {
 	t.Helper()
 	for _, s := range expected {

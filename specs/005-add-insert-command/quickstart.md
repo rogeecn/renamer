@@ -9,9 +9,9 @@
 
 2. **Insert text near the end while preserving extensions.**
    ```bash
-   renamer insert -1 "_FINAL" --path ./reports --dry-run
+   renamer insert 1$ "_FINAL" --path ./reports --dry-run
    ```
-   - `-1` places the string before the last character of the stem.
+   - `1$` places the string before the last character of the stem.
    - Combine with `--extensions` to limit to specific file types.
 
 3. **Commit changes once preview looks correct.**

@@ -39,10 +39,8 @@ renamer insert <position> <text> [flags]
 ```
 
 - Position tokens:
-  - `^` inserts at the beginning of the filename.
-  - `$` inserts immediately before the extension dot (or end if no extension).
-  - Positive integers (1-based) count forward from the start of the stem.
-  - Negative integers count backward from the end of the stem (e.g., `-1` inserts before the last rune).
+  - `^` inserts at the beginning of the filename. Append a number (`^3` or just `3`) to insert after the third rune of the stem.
+  - `$` inserts immediately before the extension dot (or end if no extension). Append a number (`1$`) to count backward from the end of the stem (e.g., `1$` inserts before the final rune).
 - Text must be valid UTF-8 without path separators or control characters; Unicode characters are supported.
 - Scope flags (`--path`, `-r`, `-d`, `--hidden`, `--extensions`) limit the candidate set before insertion.
 - `--dry-run` previews the plan; rerun with `--yes` to apply the same operations.
@@ -51,6 +49,7 @@ renamer insert <position> <text> [flags]
 
 - Preview adding a prefix: `renamer insert ^ "[2025] " --dry-run`
 - Append before extension: `renamer insert $ _ARCHIVE --yes --path ./docs`
+- Insert before the final character: `renamer insert 1$ _TAIL --path ./images --dry-run`
 - Insert after third character in stem: `renamer insert 3 _tag --path ./images --dry-run`
 - Combine with extension filter: `renamer insert ^ "v1_" --extensions .txt|.md`
 

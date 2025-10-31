@@ -17,7 +17,7 @@ func newInsertCommand() *cobra.Command {
 		Short: "Insert text into filenames at specified positions",
 		Long: `Insert a Unicode string into each candidate filename at a specific position.
 Supported positions: "^" (start), "$" (before extension), positive indexes (1-based),
-negative indexes counting back from the end.`,
+and suffix offsets like "3$" counting backward from the end.`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scope, err := listing.ScopeFromCmd(cmd)
@@ -80,7 +80,7 @@ negative indexes counting back from the end.`,
 	}
 
 	cmd.Example = `  renamer insert ^ "[2025] " --dry-run
-  renamer insert -1 _FINAL --yes --path ./reports`
+  renamer insert 1$ _FINAL --yes --path ./reports`
 
 	return cmd
 }

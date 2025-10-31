@@ -95,6 +95,52 @@ func TestInsertZeroMatchExitsSuccessfully(t *testing.T) {
 	}
 }
 
+func TestInsertLedgerCapturesTailOffsetToken(t *testing.T) {
+	t.Parallel()
+
+	tmp := t.TempDir()
+	writeInsertLedgerFile(t, filepath.Join(tmp, "ab.txt"))
+
+	scope := &listing.ListingRequest{
+		WorkingDir:         tmp,
+		IncludeDirectories: false,
+		Recursive:          false,
+		IncludeHidden:      false,
+		Format:             listing.FormatTable,
+	}
+	if err := scope.Validate(); err != nil {
+		t.Fatalf("validate scope: %v", err)
+	}
+
+	req := insert.NewRequest(scope)
+	req.SetExecutionMode(false, true)
+	req.SetPositionAndText("1$", "_SUFFIX")
+
+	summary, planned, err := insert.Preview(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("preview error: %v", err)
+	}
+	if len(planned) != 1 {
+		t.Fatalf("expected 1 planned operation, got %d", len(planned))
+	}
+
+	entry, err := insert.Apply(context.Background(), req, planned, summary)
+	if err != nil {
+		t.Fatalf("apply error: %v", err)
+	}
+
+	if entry.Metadata["positionToken"] != "1$" {
+		t.Fatalf("expected position token metadata 1$, got %v", entry.Metadata["positionToken"])
+	}
+	if entry.Metadata["insertText"] != "_SUFFIX" {
+		t.Fatalf("expected insertText metadata _SUFFIX, got %v", entry.Metadata["insertText"])
+	}
+
+	if _, err := os.Stat(filepath.Join(tmp, "a_SUFFIXb.txt")); err != nil {
+		t.Fatalf("expected renamed file a_SUFFIXb.txt: %v", err)
+	}
+}
+
 func writeInsertLedgerFile(t *testing.T, path string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

@@ -3,7 +3,7 @@
 **Feature Branch**: `005-add-insert-command`  
 **Created**: 2025-10-30  
 **Status**: Draft  
-**Input**: User description: "实现插入（Insert）字符，支持在文件名指定位置插入指定字符串数据，示例 renamer insert <position> <string>, position:可以包含 ^：开头、$：结尾、 正数：字符位置、负数：倒数字符位置。！！重要：需要考虑中文字符"
+**Input**: User description: "实现插入（Insert）字符，支持在文件名指定位置插入指定字符串数据，示例 renamer insert <position> <string>, position:可以包含 ^：开头、$：结尾、 正数：字符位置、使用 N$ 表示倒数第 N 个字符。！！重要：需要考虑中文字符"
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -18,7 +18,7 @@ As a power user organizing media files, I want to insert a label into filenames 
 **Acceptance Scenarios**:
 
 1. **Given** files named `项目A报告.docx` and `项目B报告.docx`, **When** the user runs `renamer insert ^ 2025- --dry-run`, **Then** the preview lists `2025-项目A报告.docx` and `2025-项目B报告.docx`.
-2. **Given** files named `holiday.jpg` and `trip.jpg`, **When** the user runs `renamer insert -1 X --yes`, **Then** the apply step inserts `X` before the last character of each base name while preserving extensions.
+2. **Given** files named `holiday.jpg` and `trip.jpg`, **When** the user runs `renamer insert 1$ X --yes`, **Then** the apply step inserts `X` before the last character of each base name while preserving extensions.
 
 ---
 
@@ -65,13 +65,13 @@ As a user preparing filenames with multilingual characters, I want validation an
 
 ### Functional Requirements
 
-- **FR-001**: CLI MUST provide a dedicated `insert` subcommand accepting a positional argument (`^`, `$`, positive integer, or negative integer) and the string to insert.
+- **FR-001**: CLI MUST provide a dedicated `insert` subcommand accepting a positional argument (`^`, `$`, forward indexes like `3`/`^3`, or backward indexes like `1$`) and the string to insert.
 - **FR-002**: Insert positions MUST be interpreted using Unicode code points on the filename stem (excluding extension) so multi-byte characters count as a single position.
 - **FR-003**: The command MUST support scope flags (`--path`, `--recursive`, `--include-dirs`, `--hidden`, `--extensions`, `--dry-run`, `--yes`) consistent with existing commands.
 - **FR-004**: Preview MUST display original and proposed names, highlighting inserted segments, and block apply when conflicts or invalid positions are detected.
 - **FR-005**: Apply MUST update filesystem entries atomically per batch, record operations in the `.renamer` ledger with inserted string, position rule, affected files, and timestamps, and support undo.
 - **FR-006**: Validation MUST reject positions outside the allowable range, empty insertion strings (unless explicitly allowed), and inputs containing path separators or control characters.
-- **FR-007**: Help output MUST describe position semantics (`^`, `$`, positive, negative), Unicode handling, and examples for both files and directories.
+- **FR-007**: Help output MUST describe position semantics (`^`, `$`, forward indexes, backward suffix tokens such as `N$`), Unicode handling, and examples for both files and directories.
 - **FR-008**: Automation runs with `--yes` MUST emit deterministic exit codes (`0` success, non-zero on validation/conflicts) and human-readable messages that can be parsed for errors.
 
 ### Key Entities

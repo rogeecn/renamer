@@ -71,6 +71,62 @@ func TestInsertPreviewAndApply(t *testing.T) {
 	}
 }
 
+func TestInsertTailOffsetToken(t *testing.T) {
+	t.Parallel()
+
+	tmp := t.TempDir()
+	writeInsertFile(t, filepath.Join(tmp, "code.txt"))
+
+	scope := &listing.ListingRequest{
+		WorkingDir:         tmp,
+		IncludeDirectories: false,
+		Recursive:          false,
+		IncludeHidden:      false,
+		Extensions:         nil,
+		Format:             listing.FormatTable,
+	}
+	if err := scope.Validate(); err != nil {
+		t.Fatalf("validate scope: %v", err)
+	}
+
+	req := insert.NewRequest(scope)
+	req.SetExecutionMode(true, false)
+	req.SetPositionAndText("1$", "_TAIL")
+
+	summary, planned, err := insert.Preview(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("preview error: %v", err)
+	}
+	if summary.TotalCandidates != 1 {
+		t.Fatalf("expected 1 candidate, got %d", summary.TotalCandidates)
+	}
+	if summary.TotalChanged != 1 {
+		t.Fatalf("expected 1 change, got %d", summary.TotalChanged)
+	}
+	if len(planned) != 1 {
+		t.Fatalf("expected 1 planned operation, got %d", len(planned))
+	}
+	expected := filepath.ToSlash("cod_TAILe.txt")
+	if planned[0].ProposedRelative != expected {
+		t.Fatalf("expected proposed path %s, got %s", expected, planned[0].ProposedRelative)
+	}
+
+	req.SetExecutionMode(false, true)
+	entry, err := insert.Apply(context.Background(), req, planned, summary)
+	if err != nil {
+		t.Fatalf("apply error: %v", err)
+	}
+	if len(entry.Operations) != 1 {
+		t.Fatalf("expected 1 ledger entry, got %d", len(entry.Operations))
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "cod_TAILe.txt")); err != nil {
+		t.Fatalf("expected renamed file cod_TAILe.txt: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "code.txt")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected original file to be renamed, err=%v", err)
+	}
+}
+
 func writeInsertFile(t *testing.T, path string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
