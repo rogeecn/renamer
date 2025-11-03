@@ -13,7 +13,7 @@ As a file curator preparing bulk renames, I want the CLI to compile a clean prom
 
 **Why this priority**: This delivers the core value—automating consistent, sequential renames without manual rule crafting—unlocking the feature for everyday workflows.
 
-**Independent Test**: With a mixed set of filenames, invoke the new `renamer ai-rename` flow, confirm the prompt includes the sampled names and instructions, and verify the returned plan previews sequential, uniform, sanitized filenames ready for apply.
+**Independent Test**: With a mixed set of filenames, invoke the new `renamer ai` flow, confirm the prompt includes the sampled names and instructions, and verify the returned plan previews sequential, uniform, sanitized filenames ready for apply.
 
 **Acceptance Scenarios**:
 
