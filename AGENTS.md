@@ -11,6 +11,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-29
 - Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/history/output packages (005-add-insert-command)
 - Go 1.24 + `spf13/cobra`, `spf13/pflag`, Go `regexp` (RE2 engine), internal traversal/history/output packages (006-add-regex-command)
 - Local filesystem and `.renamer` ledger files (006-add-regex-command)
+- Go 1.24 (CLI), Node.js 20 + TypeScript (Google Genkit workflow) + `spf13/cobra`, internal traversal/history/output packages, Google Genkit SDK, OpenAI-compatible HTTP client for fallbacks (008-ai-rename-prompt)
+- Local filesystem plus `.renamer` append-only ledger (008-ai-rename-prompt)
 
 ## Project Structure
 
@@ -43,9 +45,9 @@ tests/
 - Smoke: `scripts/smoke-test-replace.sh`, `scripts/smoke-test-remove.sh`
 
 ## Recent Changes
+- 008-ai-rename-prompt: Added Go 1.24 (CLI), Node.js 20 + TypeScript (Google Genkit workflow) + `spf13/cobra`, internal traversal/history/output packages, Google Genkit SDK, OpenAI-compatible HTTP client for fallbacks
 - 001-sequence-numbering: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/history/output packages
 - 006-add-regex-command: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, Go `regexp` (RE2 engine), internal traversal/history/output packages
-- 005-add-insert-command: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/history/output packages
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

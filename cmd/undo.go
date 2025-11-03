@@ -56,6 +56,9 @@ func newUndoCommand() *cobra.Command {
 						fmt.Fprintf(out, "Template restored to %q\n", template)
 					}
 				}
+				if aiMeta, ok := entry.AIMetadata(); ok {
+					fmt.Fprintf(out, "AI batch restored (model=%s, promptHash=%s, files=%d)\n", aiMeta.Model, aiMeta.PromptHash, aiMeta.BatchSize)
+				}
 			}
 
 			return nil

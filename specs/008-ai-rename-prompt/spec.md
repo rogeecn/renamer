@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "实现使用AI重命名的功能，把当前的文件列表给AI使用AI进行重新命令，AI返回重命令规则后解析AI的规则进行本地重命名操作。你需要帮我考虑如何建立合适的prompt给AI实现重命名。要求：1、带序列号；2、文件名规则统一；3、文件名中去除广告推广等垃圾信息；4、如果还有其它合适规则你来适量添加。"
 
+## Clarifications
+
+### Session 2025-11-03
+
+- Q: Which AI model should the CLI use by default? → A: Default to an OpenAI-compatible model with override flag/env.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Generate AI Rename Plan (Priority: P1)
@@ -66,7 +72,7 @@ As a cautious operator, I want to review the AI plan, make manual adjustments if
 ### Functional Requirements
 
 - **FR-001**: The CLI MUST collect the active scope (paths, filters, counts) and compose an AI prompt that includes representative filenames plus the required renaming rules (sequence numbering, uniform formatting, spam removal, additional heuristics).
-- **FR-002**: The prompt MUST instruct the AI to respond in a documented, parseable structure (e.g., JSON with original and proposed names) and to preserve file extensions.
+- **FR-002**: The prompt MUST instruct the AI to respond in a documented, parseable structure (e.g., JSON with original and proposed names) and to preserve file extensions; the CLI MUST default to an OpenAI-compatible model (override via flag/env).
 - **FR-003**: The system MUST validate the AI response, ensuring every scoped file has a proposed rename, sequence numbers are continuous, names are unique, and disallowed content is removed before previewing changes.
 - **FR-004**: Users MUST be able to supply optional naming policy inputs (project tag, casing preference, separator choice, forbidden words) that the prompt reflects and the validator enforces.
 - **FR-005**: The preview MUST display AI-proposed names with sequence numbers, highlight sanitized segments, and surface any entries needing manual edits before the apply step is allowed.
@@ -85,7 +91,7 @@ As a cautious operator, I want to review the AI plan, make manual adjustments if
 
 ### Assumptions
 
-- Users provide access to an AI endpoint capable of following structured prompts and returning JSON within size limits.
+- Users provide access to an AI endpoint capable of following structured prompts and returning JSON within size limits; default secret tokens (`*_MODEL_AUTH_TOKEN`) are stored under `$HOME/.config/.renamer/`.
 - File extensions must remain unchanged; only stems are rewritten.
 - Default numbering uses three-digit, zero-padded prefixes unless the user specifies a different width or format.
 - The CLI environment already authenticates outbound AI requests; this feature focuses on prompt content and result handling.

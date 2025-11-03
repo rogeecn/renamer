@@ -5,6 +5,7 @@
 
 # Dependency directories
 vendor/
+node_modules/
 
 # IDE and editor clutter
 .vscode/
@@ -17,7 +18,13 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.swp
+*.log
 
 # Environment files
 .env
 .env.*
+
+# Build outputs
+dist/
+build/
+coverage/

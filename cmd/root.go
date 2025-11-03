@@ -15,8 +15,9 @@ var rootCmd = &cobra.Command{
 	Use:   "renamer",
 	Short: "Safe, scriptable batch renaming utility",
 	Long: `Renamer provides preview-first, undoable rename operations for files and directories.
-Use subcommands like "preview", "rename", and "list" with shared scope flags to target exactly
-the paths you intend to change.`,
+Use subcommands like "list", "replace", "ai", and "undo" with shared scope flags to target
+the paths you intend to change. Each command supports --dry-run previews and ledger-backed undo
+workflows so you can safely iterate before applying changes.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -52,6 +53,7 @@ func NewRootCommand() *cobra.Command {
 	cmd.AddCommand(newRegexCommand())
 	cmd.AddCommand(newSequenceCommand())
 	cmd.AddCommand(newUndoCommand())
+	cmd.AddCommand(newAICommand())
 
 	return cmd
 }

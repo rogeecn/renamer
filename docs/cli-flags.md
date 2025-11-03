@@ -120,3 +120,20 @@ renamer extension <source-ext...> <target-ext> [flags]
 - Preview normalization: `renamer extension .jpeg .JPG .jpg --dry-run`
 - Apply case-folded extension updates: `renamer extension .yaml .yml .yml --yes --path ./configs`
 - Include hidden assets recursively: `renamer extension .TMP .tmp --recursive --hidden`
+
+## AI Command Secrets
+
+- AI model authentication tokens are loaded from `$HOME/.config/.renamer/<MODEL>_MODEL_AUTH_TOKEN`. The default model token file is `default_MODEL_AUTH_TOKEN`, but any `--genkit-model` override maps to the same naming scheme.
+- Token files must contain only the raw API key with no extra whitespace; restrictive permissions (owner read/write) are recommended to keep credentials private.
+
+### AI Command Flags
+
+- `--genkit-model <id>` overrides the default OpenAI-compatible model used by the embedded Genkit workflow. When omitted, `gpt-4o-mini` is used.
+- `--debug-genkit` streams prompt/response telemetry (including prompt hashes and warnings) to stderr so you can archive the exchange for auditing.
+- `--export-plan <path>` writes the exact AI response (prompt hash, model, warnings, and proposed items) to a JSON file. The same file can be edited and re-imported to tweak filenames before applying.
+- `--import-plan <path>` loads a previously exported or manually curated JSON plan. The CLI re-validates all entries before previewing or applying changes.
+- `--naming-casing <style>` enforces a casing policy (`kebab`, `snake`, `camel`, `pascal`, `title`). Banned tokens, prefix rules, and spacing requirements are evaluated against the imported or generated plan.
+- `--naming-prefix`, `--naming-allow-spaces`, `--naming-keep-order`, and `--banned` extend the policy envelope that both the prompt and validator obey.
+- `--yes` applies the currently loaded plan. Without `--yes`, the command remains in preview mode even when you import a plan.
+
+> Tip: Run `renamer ai --path ./fixtures --dry-run --export-plan plan.json` to capture the initial draft, edit the JSON file, then `renamer ai --path ./fixtures --import-plan plan.json --yes` to apply the curated result.
