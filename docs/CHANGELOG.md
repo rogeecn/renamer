@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add `renamer sequence` subcommand with configurable numbering (start, width, placement—default prefix—separator, number prefix/suffix) and ledger-backed apply/undo flows.
 - Add `renamer remove` subcommand with sequential multi-token deletions, empty-name safeguards, and ledger-backed undo.
 - Document remove command ordering semantics, duplicate warnings, and automation guidance.
 - Add `renamer replace` subcommand supporting multi-pattern replacements, preview/apply/undo, and scope flags.

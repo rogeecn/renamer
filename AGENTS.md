@@ -43,9 +43,9 @@ tests/
 - Smoke: `scripts/smoke-test-replace.sh`, `scripts/smoke-test-remove.sh`
 
 ## Recent Changes
+- 001-sequence-numbering: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/history/output packages
 - 006-add-regex-command: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, Go `regexp` (RE2 engine), internal traversal/history/output packages
 - 005-add-insert-command: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/history/output packages
-- 004-extension-rename: Added Go 1.24 + `spf13/cobra`, `spf13/pflag`, internal traversal/ledger packages
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

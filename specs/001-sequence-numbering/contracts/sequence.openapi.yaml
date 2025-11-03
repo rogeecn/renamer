@@ -1,0 +1,241 @@
+openapi: 3.1.0
+info:
+  title: Renamer Sequence Command Contract
+  version: 0.1.0
+  description: >
+    Conceptual REST contract for the `renamer sequence` CLI behavior, used to
+    formalize preview/apply expectations for testing and documentation.
+servers:
+  - url: cli://local
+paths:
+  /sequence/preview:
+    post:
+      summary: Generate a deterministic sequence numbering preview.
+      operationId: previewSequence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SequenceRequest'
+      responses:
+        '200':
+          description: Preview generated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SequencePlan'
+        '400':
+          description: Invalid configuration (e.g., width <= 0, invalid separator).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /sequence/apply:
+    post:
+      summary: Apply sequence numbering to previously previewed candidates.
+      operationId: applySequence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/SequenceRequest'
+                - type: object
+                  properties:
+                    confirm:
+                      type: boolean
+                      const: true
+      responses:
+        '200':
+          description: Sequence numbering applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SequenceApplyResult'
+        '207':
+          description: Applied with skipped conflicts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SequenceApplyResult'
+        '400':
+          description: Invalid configuration or missing confirmation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Scope filters yielded zero candidates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    SequenceRequest:
+      type: object
+      required:
+        - start
+        - placement
+        - separator
+      properties:
+        path:
+          type: string
+          description: Root directory for traversal.
+        recursive:
+          type: boolean
+        includeDirs:
+          type: boolean
+          description: Directories remain untouched even when included.
+        hidden:
+          type: boolean
+        extensions:
+          type: array
+          items:
+            type: string
+            pattern: '^\\.[^./]+$'
+        dryRun:
+          type: boolean
+        yes:
+          type: boolean
+        start:
+          type: integer
+          minimum: 1
+        width:
+          type: integer
+          minimum: 1
+        placement:
+          type: string
+          enum: [prefix, suffix]
+        separator:
+          type: string
+          minLength: 1
+          pattern: '^[^/\\\\]+$'
+    SequencePlan:
+      type: object
+      required:
+        - candidates
+        - config
+        - summary
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/SequenceCandidate'
+        skippedConflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SequenceConflict'
+        summary:
+          $ref: '#/components/schemas/SequenceSummary'
+        config:
+          $ref: '#/components/schemas/SequenceConfig'
+    SequenceCandidate:
+      type: object
+      required:
+        - originalPath
+        - proposedPath
+        - index
+      properties:
+        originalPath:
+          type: string
+        proposedPath:
+          type: string
+        index:
+          type: integer
+          minimum: 0
+    SequenceConflict:
+      type: object
+      required:
+        - originalPath
+        - conflictingPath
+        - reason
+      properties:
+        originalPath:
+          type: string
+        conflictingPath:
+          type: string
+        reason:
+          type: string
+          enum: [existing_target, invalid_separator, width_overflow]
+    SequenceSummary:
+      type: object
+      required:
+        - totalCandidates
+        - renamedCount
+        - skippedCount
+      properties:
+        totalCandidates:
+          type: integer
+        renamedCount:
+          type: integer
+        skippedCount:
+          type: integer
+        warnings:
+          type: array
+          items:
+            type: string
+    SequenceConfig:
+      type: object
+      required:
+        - start
+        - placement
+        - separator
+      properties:
+        start:
+          type: integer
+        width:
+          type: integer
+        placement:
+          type: string
+          enum: [prefix, suffix]
+        separator:
+          type: string
+    SequenceApplyResult:
+      type: object
+      required:
+        - plan
+        - ledgerEntry
+      properties:
+        plan:
+          $ref: '#/components/schemas/SequencePlan'
+        ledgerEntry:
+          $ref: '#/components/schemas/SequenceLedgerEntry'
+    SequenceLedgerEntry:
+      type: object
+      required:
+        - rule
+        - config
+        - operations
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        rule:
+          type: string
+          const: sequence
+        config:
+          $ref: '#/components/schemas/SequenceConfig'
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/SequenceOperation'
+    SequenceOperation:
+      type: object
+      required:
+        - from
+        - to
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string

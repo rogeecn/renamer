@@ -49,6 +49,7 @@ All subcommands accept these persistent flags:
 - `renamer remove <pattern...>` — Strip ordered substrings from names with empty-name protection and duplicate detection.
 - `renamer extension <source-ext...> <target-ext>` — Normalize heterogeneous extensions to a single target while keeping a ledger entry for undo.
 - `renamer insert <position> <text>` — Insert text at symbolic (`^`, `$`) offsets, count forward with numbers (`3` or `^3`), or backward with suffix tokens like `1$`.
+- `renamer sequence [flags]` — Append or prepend zero-padded sequence numbers with configurable start, width, placement (default prefix), separator, and static number prefix/suffix options.
 - `renamer regex <pattern> <template>` — Rename via RE2 capture groups using placeholders like `@1`, `@2`, `@0`, or escape literal `@` as `@@`.
 - `renamer undo` — Revert the most recent mutating command recorded in the ledger.
 

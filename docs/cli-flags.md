@@ -53,6 +53,23 @@ renamer insert <position> <text> [flags]
 - Insert after third character in stem: `renamer insert 3 _tag --path ./images --dry-run`
 - Combine with extension filter: `renamer insert ^ "v1_" --extensions .txt|.md`
 
+## Sequence Command Quick Reference
+
+```bash
+renamer sequence [flags]
+```
+
+- Applies deterministic numbering to filenames using the active scope filters; preview-first by default.
+- Default behavior prepends a three-digit number using an underscore separator (e.g. `001_name.ext`).
+- Flags:
+  - `--start` (default `1`) sets the initial sequence value (must be ≥1).
+  - `--width` (optional) enforces minimum digit width with zero padding; the command auto-expands and warns when more digits are required.
+  - `--placement` (`suffix` default, `prefix` alternative) controls whether numbers prepend or append the stem.
+  - `--separator` customizes the string placed between the stem and number; path separators are rejected.
+  - `--number-prefix` / `--number-suffix` add static text directly before or after the digits (use with `--placement prefix` for labelled sequences such as `seq001-file.ext`).
+  - Set `--separator ""` to remove the underscore separator when prefixing numbers (e.g. `seq001file.ext`).
+- Conflicting targets are skipped with warnings while remaining files continue numbering; directories included via `--include-dirs` are listed but unchanged.
+
 ## Remove Command Quick Reference
 
 ```bash

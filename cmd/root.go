@@ -50,6 +50,7 @@ func NewRootCommand() *cobra.Command {
 	cmd.AddCommand(NewExtensionCommand())
 	cmd.AddCommand(newInsertCommand())
 	cmd.AddCommand(newRegexCommand())
+	cmd.AddCommand(newSequenceCommand())
 	cmd.AddCommand(newUndoCommand())
 
 	return cmd
