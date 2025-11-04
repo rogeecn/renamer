@@ -53,19 +53,18 @@ func TestAIPreviewFlowRendersSequenceTable(t *testing.T) {
 	createAIPreviewFile(t, filepath.Join(root, "promo SALE 01.JPG"))
 	createAIPreviewFile(t, filepath.Join(root, "family_photo.png"))
 
-	t.Setenv("default_MODEL_AUTH_TOKEN", "test-token")
+	t.Setenv("OPENAI_TOKEN", "test-token")
 
 	rootCmd := renamercmd.NewRootCommand()
 	var stdout, stderr bytes.Buffer
 	rootCmd.SetOut(&stdout)
 	rootCmd.SetErr(&stderr)
-	exportPath := filepath.Join(root, "plan.json")
+	exportPath := filepath.Join(root, "renamer.plan.json")
 	rootCmd.SetArgs([]string{
 		"ai",
 		"--path", root,
 		"--dry-run",
 		"--debug-genkit",
-		"--export-plan", exportPath,
 	})
 
 	if err := rootCmd.Execute(); err != nil {

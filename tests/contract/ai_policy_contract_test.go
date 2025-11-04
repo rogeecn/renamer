@@ -32,7 +32,7 @@ func (c *captureWorkflow) Run(ctx context.Context, req genkit.Request) (genkit.R
 	}, nil
 }
 
-func TestAICommandAppliesNamingPoliciesToPrompt(t *testing.T) {
+func TestAICommandUsesDefaultPoliciesInPrompt(t *testing.T) {
 	genkit.ResetWorkflowFactory()
 	stub := &captureWorkflow{}
 	genkit.OverrideWorkflowFactory(func(ctx context.Context, opts genkit.Options) (genkit.WorkflowRunner, error) {
@@ -51,11 +51,6 @@ func TestAICommandAppliesNamingPoliciesToPrompt(t *testing.T) {
 		"ai",
 		"--path", rootDir,
 		"--dry-run",
-		"--naming-casing", "snake",
-		"--naming-prefix", "proj",
-		"--naming-allow-spaces",
-		"--naming-keep-order",
-		"--banned", "alpha",
 	})
 
 	if err := rootCmd.Execute(); err != nil {
@@ -70,38 +65,29 @@ func TestAICommandAppliesNamingPoliciesToPrompt(t *testing.T) {
 
 	req := stub.request
 	policies := req.Payload.Policies
-	if policies.Prefix != "proj" {
-		t.Fatalf("expected prefix proj, got %q", policies.Prefix)
+	if policies.Prefix != "" {
+		t.Fatalf("expected empty prefix, got %q", policies.Prefix)
 	}
-	if policies.Casing != "snake" {
-		t.Fatalf("expected casing snake, got %q", policies.Casing)
+	if policies.Casing != "kebab" {
+		t.Fatalf("expected default casing kebab, got %q", policies.Casing)
 	}
-	if !policies.AllowSpaces {
-		t.Fatalf("expected allow spaces flag to propagate")
+	if policies.AllowSpaces {
+		t.Fatalf("expected allow spaces default false")
 	}
-	if !policies.KeepOriginalOrder {
-		t.Fatalf("expected keep original order flag to propagate")
-	}
-	if len(policies.ForbiddenTokens) != 1 || policies.ForbiddenTokens[0] != "alpha" {
-		t.Fatalf("expected forbidden tokens to capture user list, got %#v", policies.ForbiddenTokens)
+	if policies.KeepOriginalOrder {
+		t.Fatalf("expected keep original order default false")
 	}
 
 	banned := req.Payload.BannedTerms
 	containsDefault := false
-	containsUser := false
 	for _, term := range banned {
-		switch term {
-		case "alpha":
-			containsUser = true
-		case "clickbait":
+		if term == "clickbait" {
 			containsDefault = true
+			break
 		}
 	}
-	if !containsUser {
-		t.Fatalf("expected banned terms to include user-provided token")
-	}
 	if !containsDefault {
-		t.Fatalf("expected banned terms to retain default tokens")
+		t.Fatalf("expected default banned terms propagated, got %#v", banned)
 	}
 }
 

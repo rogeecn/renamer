@@ -44,7 +44,7 @@ func TestAIApplyAndUndoFlow(t *testing.T) {
 	writeFile(t, filepath.Join(root, "draft_one.txt"))
 	writeFile(t, filepath.Join(root, "draft_two.txt"))
 
-	planPath := filepath.Join(root, "ai-plan.json")
+	planPath := filepath.Join(root, "renamer.plan.json")
 
 	preview := renamercmd.NewRootCommand()
 	var previewOut, previewErr bytes.Buffer
@@ -54,7 +54,6 @@ func TestAIApplyAndUndoFlow(t *testing.T) {
 		"ai",
 		"--path", root,
 		"--dry-run",
-		"--export-plan", planPath,
 	})
 
 	if err := preview.Execute(); err != nil {
@@ -124,7 +123,6 @@ func TestAIApplyAndUndoFlow(t *testing.T) {
 		"ai",
 		"--path", root,
 		"--dry-run",
-		"--import-plan", planPath,
 	})
 
 	if err := previewEdited.Execute(); err != nil {
@@ -148,7 +146,6 @@ func TestAIApplyAndUndoFlow(t *testing.T) {
 	applyCmd.SetArgs([]string{
 		"ai",
 		"--path", root,
-		"--import-plan", planPath,
 		"--yes",
 	})
 

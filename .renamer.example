@@ -1,0 +1,42 @@
+# Example AI vendor credentials for renamer.
+# Copy this file to ~/.config/.renamer/.renamer (or the path specified by
+# RENAMER_CONFIG_DIR) and replace the placeholder values with real tokens.
+
+# OpenAI (gpt-4o, o1, ChatGPT)
+OPENAI_TOKEN=sk-openai-xxxxxxxxxxxxxxxxxxxxxxxx
+
+# Anthropic (Claude models)
+ANTHROPIC_TOKEN=sk-anthropic-xxxxxxxxxxxxxxxx
+
+# Google (Gemini, LearnLM, PaLM)
+GOOGLE_TOKEN=ya29.xxxxxxxxxxxxxxxxxxxxxxxx
+
+# Mistral AI (Mistral, Mixtral, Ministral)
+MISTRAL_TOKEN=sk-mistral-xxxxxxxxxxxxxxxx
+
+# Cohere (Command family)
+COHERE_TOKEN=sk-cohere-xxxxxxxxxxxxxxxx
+
+# Moonshot AI (Moonshot models)
+MOONSHOT_TOKEN=sk-moonshot-xxxxxxxxxxxxxxxx
+
+# Zhipu AI (GLM series)
+ZHIPU_TOKEN=sk-zhipu-xxxxxxxxxxxxxxxx
+
+# Alibaba DashScope (Qwen)
+ALIBABA_TOKEN=sk-dashscope-xxxxxxxxxxxxxxxx
+
+# Baidu Wenxin/ERNIE
+BAIDU_TOKEN=sk-baidu-xxxxxxxxxxxxxxxx
+
+# MiniMax (ABAB)
+MINIMAX_TOKEN=sk-minimax-xxxxxxxxxxxxxxxx
+
+# ByteDance Doubao
+BYTEDANCE_TOKEN=sk-bytedance-xxxxxxxxxxxxxxxx
+
+# DeepSeek
+DEEPSEEK_TOKEN=sk-deepseek-xxxxxxxxxxxxxxxx
+
+# xAI Grok
+XAI_TOKEN=sk-xai-xxxxxxxxxxxxxxxx

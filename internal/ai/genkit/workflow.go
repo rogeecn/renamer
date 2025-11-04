@@ -63,7 +63,7 @@ type Workflow struct {
 
 // NewWorkflow instantiates a Genkit workflow for the preferred model. When no
 // model is provided it defaults to gpt-4o-mini. The workflow requires a token
-// provider capable of resolving `<model>_MODEL_AUTH_TOKEN` secrets.
+// provider capable of resolving `<VENDOR>_TOKEN` secrets.
 func NewWorkflow(ctx context.Context, opts Options) (*Workflow, error) {
 	modelName := strings.TrimSpace(opts.Model)
 	if modelName == "" {

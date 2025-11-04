@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -19,17 +20,13 @@ import (
 )
 
 type aiCommandOptions struct {
-	Model             string
-	Debug             bool
-	ExportPath        string
-	ImportPath        string
-	Casing            string
-	Prefix            string
-	AllowSpaces       bool
-	KeepOriginalOrder bool
-	BannedTokens      []string
+	Model string
+	Debug bool
 }
 
+const aiPlanFilename = "renamer.plan.json"
+
+// newAICommand 构建 `renamer ai` 子命令，仅保留模型选择与调试标志，其他策略交由 AI 自行生成。
 func newAICommand() *cobra.Command {
 	ops := &aiCommandOptions{}
 
@@ -37,14 +34,11 @@ func newAICommand() *cobra.Command {
 		Use:   "ai",
 		Short: "Generate rename plans using the AI workflow",
 		Long:  "Invoke the embedded AI workflow to generate, validate, and optionally apply rename plans.",
-		Example: strings.TrimSpace(`  # Preview an AI plan and export the raw response for edits
-	renamer ai --path ./photos --dry-run --export-plan plan.json
+		Example: strings.TrimSpace(`  # Generate a plan for review in renamer.plan.json
+	renamer ai --path ./photos --dry-run
 
-	# Import an edited plan and validate it without applying changes
-	renamer ai --path ./photos --dry-run --import-plan plan.json
-
-	# Apply an edited plan after validation passes
-	renamer ai --path ./photos --import-plan plan.json --yes`),
+	# Apply the reviewed plan after confirming the preview
+	renamer ai --path ./photos --yes`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			options := collectAIOptions(cmd, ops)
 			return runAICommand(cmd.Context(), cmd, options)
@@ -57,24 +51,15 @@ func newAICommand() *cobra.Command {
 }
 
 func bindAIFlags(cmd *cobra.Command, opts *aiCommandOptions) {
-	cmd.Flags().StringVar(&opts.Model, "genkit-model", genkit.DefaultModelName, fmt.Sprintf("OpenAI-compatible model identifier (default %s)", genkit.DefaultModelName))
+	cmd.Flags().
+		StringVar(&opts.Model, "genkit-model", genkit.DefaultModelName, fmt.Sprintf("OpenAI-compatible model identifier (default %s)", genkit.DefaultModelName))
 	cmd.Flags().BoolVar(&opts.Debug, "debug-genkit", false, "Write Genkit prompt/response traces to the debug log")
-	cmd.Flags().StringVar(&opts.ExportPath, "export-plan", "", "Export the raw AI plan JSON to the provided file path")
-	cmd.Flags().StringVar(&opts.ImportPath, "import-plan", "", "Import an edited AI plan JSON for validation or apply")
-	cmd.Flags().StringVar(&opts.Casing, "naming-casing", "kebab", "Casing style for AI-generated filenames (kebab, snake, camel, pascal, title)")
-	cmd.Flags().StringVar(&opts.Prefix, "naming-prefix", "", "Static prefix AI proposals must include (alias: --prefix)")
-	cmd.Flags().StringVar(&opts.Prefix, "prefix", "", "Alias for --naming-prefix")
-	cmd.Flags().BoolVar(&opts.AllowSpaces, "naming-allow-spaces", false, "Permit spaces in AI-generated filenames")
-	cmd.Flags().BoolVar(&opts.KeepOriginalOrder, "naming-keep-order", false, "Instruct AI to preserve original ordering of descriptive terms")
-	cmd.Flags().StringSliceVar(&opts.BannedTokens, "banned", nil, "Comma-separated list of additional banned tokens (repeat flag to add more)")
 }
 
 func collectAIOptions(cmd *cobra.Command, defaults *aiCommandOptions) aiCommandOptions {
 	result := aiCommandOptions{
-		Model:      genkit.DefaultModelName,
-		Debug:      false,
-		ExportPath: "",
-		Casing:     "kebab",
+		Model: genkit.DefaultModelName,
+		Debug: false,
 	}
 
 	if defaults != nil {
@@ -82,16 +67,6 @@ func collectAIOptions(cmd *cobra.Command, defaults *aiCommandOptions) aiCommandO
 			result.Model = defaults.Model
 		}
 		result.Debug = defaults.Debug
-		result.ExportPath = defaults.ExportPath
-		if defaults.Casing != "" {
-			result.Casing = defaults.Casing
-		}
-		result.Prefix = defaults.Prefix
-		result.AllowSpaces = defaults.AllowSpaces
-		result.KeepOriginalOrder = defaults.KeepOriginalOrder
-		if len(defaults.BannedTokens) > 0 {
-			result.BannedTokens = append([]string(nil), defaults.BannedTokens...)
-		}
 	}
 
 	if flag := cmd.Flags().Lookup("genkit-model"); flag != nil {
@@ -106,56 +81,16 @@ func collectAIOptions(cmd *cobra.Command, defaults *aiCommandOptions) aiCommandO
 		}
 	}
 
-	if flag := cmd.Flags().Lookup("export-plan"); flag != nil {
-		if value, err := cmd.Flags().GetString("export-plan"); err == nil && value != "" {
-			result.ExportPath = value
-		}
-	}
-
-	if flag := cmd.Flags().Lookup("import-plan"); flag != nil {
-		if value, err := cmd.Flags().GetString("import-plan"); err == nil && value != "" {
-			result.ImportPath = value
-		}
-	}
-
-	if flag := cmd.Flags().Lookup("naming-casing"); flag != nil {
-		if value, err := cmd.Flags().GetString("naming-casing"); err == nil && value != "" {
-			result.Casing = value
-		}
-	}
-
-	if flag := cmd.Flags().Lookup("naming-prefix"); flag != nil {
-		if value, err := cmd.Flags().GetString("naming-prefix"); err == nil {
-			result.Prefix = value
-		}
-	}
-	if flag := cmd.Flags().Lookup("prefix"); flag != nil && flag.Changed {
-		if value, err := cmd.Flags().GetString("prefix"); err == nil {
-			result.Prefix = value
-		}
-	}
-
-	if flag := cmd.Flags().Lookup("naming-allow-spaces"); flag != nil {
-		if value, err := cmd.Flags().GetBool("naming-allow-spaces"); err == nil {
-			result.AllowSpaces = value
-		}
-	}
-
-	if flag := cmd.Flags().Lookup("naming-keep-order"); flag != nil {
-		if value, err := cmd.Flags().GetBool("naming-keep-order"); err == nil {
-			result.KeepOriginalOrder = value
-		}
-	}
-
-	if flag := cmd.Flags().Lookup("banned"); flag != nil {
-		if value, err := cmd.Flags().GetStringSlice("banned"); err == nil && len(value) > 0 {
-			result.BannedTokens = append([]string(nil), value...)
-		}
-	}
-
 	return result
 }
 
+// runAICommand 按以下顺序执行 AI 重命名流程：
+// 1. 解析作用范围与是否需要立即应用；
+// 2. 自动探测工作目录下的 renamer.plan.json，决定是加载人工调整还是生成新计划；
+// 3. 收集候选文件并过滤生成过程中的辅助文件；
+// 4. 通过 Genkit 工作流调用模型生成方案或读取既有方案；
+// 5. 保存/更新本地计划文件，随后校验、渲染预览并输出冲突与告警；
+// 6. 在用户确认后执行改名并记录账本。
 func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOptions) error {
 	scope, err := listing.ScopeFromCmd(cmd)
 	if err != nil {
@@ -167,22 +102,28 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 		return err
 	}
 
-	options.ImportPath = strings.TrimSpace(options.ImportPath)
-
-	casing, err := normalizeCasing(options.Casing)
-	if err != nil {
-		return err
+	// 探测当前目录下的计划文件，支持人工预处理后再运行。
+	planPath := filepath.Join(scope.WorkingDir, aiPlanFilename)
+	planExists := false
+	if info, err := os.Stat(planPath); err == nil {
+		if info.IsDir() {
+			return fmt.Errorf("plan file %s is a directory", planPath)
+		}
+		planExists = true
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("plan file %s: %w", planPath, err)
 	}
-	options.Casing = casing
-	prefix := strings.TrimSpace(options.Prefix)
-	userBanned := sanitizeTokenSlice(options.BannedTokens)
-	bannedTerms := mergeBannedTerms(defaultBannedTerms(), userBanned)
 
+	// 默认策略完全交由提示模板处理，仅保留基础禁止词。
+	casing := "kebab"
+	bannedTerms := defaultBannedTerms()
+
+	// 收集所有候选文件，剔除计划文件自身避免被改名。
 	candidates, err := plan.CollectCandidates(ctx, scope)
 	if err != nil {
 		return err
 	}
-	ignoreSet := buildIgnoreSet(scope.WorkingDir, options.ExportPath, options.ImportPath)
+	ignoreSet := buildIgnoreSet(scope.WorkingDir, planPath)
 	if len(ignoreSet) > 0 {
 		candidates = filterIgnoredCandidates(candidates, ignoreSet)
 	}
@@ -208,11 +149,11 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 	}
 
 	policies := prompt.PolicyConfig{
-		Prefix:            prefix,
-		Casing:            options.Casing,
-		AllowSpaces:       options.AllowSpaces,
-		KeepOriginalOrder: options.KeepOriginalOrder,
-		ForbiddenTokens:   append([]string(nil), userBanned...),
+		Prefix:            "",
+		Casing:            casing,
+		AllowSpaces:       false,
+		KeepOriginalOrder: false,
+		ForbiddenTokens:   append([]string(nil), bannedTerms...),
 	}
 	validatorPolicy := prompt.NamingPolicyConfig{
 		Prefix:            policies.Prefix,
@@ -226,8 +167,9 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 	var promptHash string
 	var model string
 
-	if options.ImportPath != "" {
-		resp, err := plan.LoadResponse(options.ImportPath)
+	if planExists {
+		// 若检测到已有计划，则优先加载人工编辑的方案继续校验/执行。
+		resp, err := plan.LoadResponse(planPath)
 		if err != nil {
 			return err
 		}
@@ -238,6 +180,7 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 			model = options.Model
 		}
 	} else {
+		// 没有计划文件时，调用 Genkit 工作流生成全新方案。
 		builder := prompt.NewBuilder()
 		promptPayload, err := builder.Build(prompt.BuildInput{
 			WorkingDir:  scope.WorkingDir,
@@ -267,13 +210,6 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 		response = invocationResult.Response
 		promptHash = invocationResult.PromptHash
 		model = invocationResult.Response.Model
-
-		if options.ExportPath != "" {
-			if err := plan.SaveResponse(options.ExportPath, response); err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.ErrOrStderr(), "AI plan exported to %s\n", options.ExportPath)
-		}
 	}
 
 	if promptHash == "" {
@@ -286,6 +222,16 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 	}
 	response.PromptHash = promptHash
 	response.Model = model
+
+	// 将生成或加载的计划写回本地，便于后续人工审核或复用。
+	if err := plan.SaveResponse(planPath, response); err != nil {
+		return err
+	}
+	message := "AI plan saved to %s\n"
+	if planExists {
+		message = "AI plan updated at %s\n"
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(), message, planPath)
 
 	originals := make([]string, 0, len(candidates))
 	for _, candidate := range candidates {
@@ -326,6 +272,7 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 		previewPlan.Model = model
 	}
 
+	// 输出预览表格与告警，帮助用户确认重命名提案。
 	if err := renderAIPlan(cmd.OutOrStdout(), previewPlan); err != nil {
 		return err
 	}
@@ -343,15 +290,6 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 		output.WriteAIPlanDebug(errorWriter, "", previewPlan.Warnings)
 	}
 
-	if options.ImportPath == "" && options.ExportPath != "" {
-		// Plan already exported earlier.
-	} else if options.ImportPath != "" && options.ExportPath != "" {
-		if err := plan.SaveResponse(options.ExportPath, response); err != nil {
-			return err
-		}
-		fmt.Fprintf(errorWriter, "AI plan exported to %s\n", options.ExportPath)
-	}
-
 	if !applyRequested {
 		return nil
 	}
@@ -360,6 +298,7 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 		return fmt.Errorf("cannot apply AI plan while conflicts remain")
 	}
 
+	// 在无冲突且用户确认的情况下，按计划执行并记录到账本。
 	applyEntry, err := plan.Apply(ctx, plan.ApplyOptions{
 		WorkingDir: scope.WorkingDir,
 		Candidates: candidates,
@@ -371,7 +310,13 @@ func runAICommand(ctx context.Context, cmd *cobra.Command, options aiCommandOpti
 		var conflictErr plan.ApplyConflictError
 		if errors.As(err, &conflictErr) {
 			for _, conflict := range conflictErr.Conflicts {
-				fmt.Fprintf(errorWriter, "Apply conflict (%s): %s %s\n", conflict.Issue, conflict.OriginalPath, conflict.Details)
+				fmt.Fprintf(
+					errorWriter,
+					"Apply conflict (%s): %s %s\n",
+					conflict.Issue,
+					conflict.OriginalPath,
+					conflict.Details,
+				)
 			}
 		}
 		return err
@@ -416,13 +361,25 @@ func composeInstructions(sequence prompt.SequenceRule, policies prompt.PolicyCon
 	lines := []string{
 		"You are an AI assistant that proposes safe file rename plans.",
 		"Return JSON matching this schema: {\"items\":[{\"original\":string,\"proposed\":string,\"sequence\":number,\"notes\"?:string}],\"warnings\"?:[string]}.",
-		fmt.Sprintf("Use %s numbering with width %d starting at %d and separator %q.", sequence.Style, sequence.Width, sequence.Start, sequence.Separator),
+		fmt.Sprintf(
+			"Use %s numbering with width %d starting at %d and separator %q.",
+			sequence.Style,
+			sequence.Width,
+			sequence.Start,
+			sequence.Separator,
+		),
 		"Preserve original file extensions exactly as provided.",
 		fmt.Sprintf("Apply %s casing to filename stems and avoid promotional or banned terms.", policies.Casing),
 		"Ensure proposed names are unique and sequences remain contiguous.",
 	}
 	if policies.Prefix != "" {
-		lines = append(lines, fmt.Sprintf("Every proposed filename must begin with the prefix %q immediately before descriptive text.", policies.Prefix))
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Every proposed filename must begin with the prefix %q immediately before descriptive text.",
+				policies.Prefix,
+			),
+		)
 	}
 	if policies.AllowSpaces {
 		lines = append(lines, "Spaces in filenames are permitted when they improve clarity.")
@@ -433,78 +390,15 @@ func composeInstructions(sequence prompt.SequenceRule, policies prompt.PolicyCon
 		lines = append(lines, "Preserve the original ordering of meaningful words when generating new stems.")
 	}
 	if len(bannedTerms) > 0 {
-		lines = append(lines, fmt.Sprintf("Never include these banned tokens (case-insensitive) in any proposed filename: %s.", strings.Join(bannedTerms, ", ")))
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Never include these banned tokens (case-insensitive) in any proposed filename: %s.",
+				strings.Join(bannedTerms, ", "),
+			),
+		)
 	}
 	return strings.Join(lines, "\n")
-}
-
-func normalizeCasing(value string) (string, error) {
-	trimmed := strings.TrimSpace(value)
-	if trimmed == "" {
-		return "kebab", nil
-	}
-	lower := strings.ToLower(trimmed)
-	supported := map[string]string{
-		"kebab":  "kebab",
-		"snake":  "snake",
-		"camel":  "camel",
-		"pascal": "pascal",
-		"title":  "title",
-	}
-	if normalized, ok := supported[lower]; ok {
-		return normalized, nil
-	}
-	return "", fmt.Errorf("unsupported naming casing %q (allowed: kebab, snake, camel, pascal, title)", value)
-}
-
-func sanitizeTokenSlice(values []string) []string {
-	unique := make(map[string]struct{})
-	for _, raw := range values {
-		for _, part := range strings.Split(raw, ",") {
-			trimmed := strings.TrimSpace(part)
-			if trimmed == "" {
-				continue
-			}
-			lower := strings.ToLower(trimmed)
-			if lower == "" {
-				continue
-			}
-			unique[lower] = struct{}{}
-		}
-	}
-	if len(unique) == 0 {
-		return nil
-	}
-	tokens := make([]string, 0, len(unique))
-	for token := range unique {
-		tokens = append(tokens, token)
-	}
-	sort.Strings(tokens)
-	return tokens
-}
-
-func mergeBannedTerms(base, extra []string) []string {
-	unique := make(map[string]struct{})
-	for _, token := range base {
-		lower := strings.ToLower(strings.TrimSpace(token))
-		if lower == "" {
-			continue
-		}
-		unique[lower] = struct{}{}
-	}
-	for _, token := range extra {
-		lower := strings.ToLower(strings.TrimSpace(token))
-		if lower == "" {
-			continue
-		}
-		unique[lower] = struct{}{}
-	}
-	result := make([]string, 0, len(unique))
-	for token := range unique {
-		result = append(result, token)
-	}
-	sort.Strings(result)
-	return result
 }
 
 func buildIgnoreSet(workingDir string, paths ...string) map[string]struct{} {

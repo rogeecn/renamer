@@ -15,12 +15,11 @@ import (
 
 const (
 	configDirEnvVar   = "RENAMER_CONFIG_DIR"
-	defaultConfigRoot = ".renamer"
+	configFileName    = ".renamer"
+	defaultVendorSlug = "openai"
 
-	modelTokenSuffix = "_MODEL_AUTH_TOKEN"
+	vendorTokenSuffix = "_TOKEN"
 
-	defaultEnvFile      = ".env"
-	secondaryEnvFile    = "tokens.env"
 	errTokenNotFoundFmt = "model token %q not found in %s or the process environment"
 )
 
@@ -51,7 +50,7 @@ func NewTokenStore(configDir string) (*TokenStore, error) {
 			if err != nil {
 				return nil, fmt.Errorf("resolve user home: %w", err)
 			}
-			root = filepath.Join(home, ".config", defaultConfigRoot)
+			root = filepath.Join(home, ".config", configFileName)
 		}
 	}
 
@@ -67,7 +66,7 @@ func (s *TokenStore) ConfigDir() string {
 }
 
 // ResolveModelToken returns the token for the provided model name. Model names
-// are normalized to match the `<slug>_MODEL_AUTH_TOKEN` convention documented
+// are normalized to match the `<VENDOR>_TOKEN` convention documented
 // for the CLI. Environment variables take precedence over file-based tokens.
 func (s *TokenStore) ResolveModelToken(model string) (string, error) {
 	key := ModelTokenKey(model)
@@ -92,107 +91,136 @@ func (s *TokenStore) lookup(key string) (string, error) {
 		return strings.TrimSpace(val), nil
 	}
 
-	path := filepath.Join(s.configDir, key)
-	raw, err := os.ReadFile(path)
-	if err == nil {
-		value := strings.TrimSpace(string(raw))
-		if value != "" {
-			s.values[key] = value
-			return value, nil
-		}
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return "", fmt.Errorf("read token file %s: %w", path, err)
-	}
-
-	return "", fmt.Errorf(errTokenNotFoundFmt, key, s.configDir)
+	return "", fmt.Errorf(errTokenNotFoundFmt, key, s.configFilePath())
 }
 
 func (s *TokenStore) ensureLoaded() error {
 	s.once.Do(func() {
-		s.err = s.loadEnvFiles()
-		if s.err != nil {
-			return
-		}
-		s.err = s.scanTokenFiles()
+		s.err = s.loadConfigFile()
 	})
 	return s.err
 }
 
-func (s *TokenStore) loadEnvFiles() error {
-	candidates := []string{
-		filepath.Join(s.configDir, defaultEnvFile),
-		filepath.Join(s.configDir, secondaryEnvFile),
-	}
-
-	for _, path := range candidates {
-		envMap, err := godotenv.Read(path)
-		if errors.Is(err, fs.ErrNotExist) {
-			continue
-		}
-		if err != nil {
-			return fmt.Errorf("load %s: %w", path, err)
-		}
-		for k, v := range envMap {
-			if strings.TrimSpace(k) == "" || strings.TrimSpace(v) == "" {
-				continue
-			}
-			s.values[k] = strings.TrimSpace(v)
-		}
-	}
-	return nil
-}
-
-func (s *TokenStore) scanTokenFiles() error {
-	entries, err := os.ReadDir(s.configDir)
+func (s *TokenStore) loadConfigFile() error {
+	path := s.configFilePath()
+	envMap, err := godotenv.Read(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("scan %s: %w", s.configDir, err)
+		return fmt.Errorf("load %s: %w", path, err)
 	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
+	for k, v := range envMap {
+		if strings.TrimSpace(k) == "" || strings.TrimSpace(v) == "" {
 			continue
 		}
-		name := entry.Name()
-		path := filepath.Join(s.configDir, name)
-
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("read %s: %w", path, err)
-		}
-
-		data := strings.TrimSpace(string(content))
-		if data == "" {
-			continue
-		}
-
-		if parsed, perr := godotenv.Unmarshal(data); perr == nil && len(parsed) > 0 {
-			for k, v := range parsed {
-				if strings.TrimSpace(k) == "" || strings.TrimSpace(v) == "" {
-					continue
-				}
-				s.values[k] = strings.TrimSpace(v)
-			}
-			continue
-		}
-
-		s.values[name] = data
+		s.values[k] = strings.TrimSpace(v)
 	}
-
 	return nil
 }
 
-// ModelTokenKey derives the token filename/environment variable for the given
-// model name following the `<slug>_MODEL_AUTH_TOKEN` convention. When model is
-// empty the default slug `default` is used.
-func ModelTokenKey(model string) string {
-	slug := slugify(model)
-	if slug == "" {
-		slug = "default"
+func (s *TokenStore) configFilePath() string {
+	info, err := os.Stat(s.configDir)
+	if err == nil {
+		if info.IsDir() {
+			return filepath.Join(s.configDir, configFileName)
+		}
+		return s.configDir
 	}
-	return slug + modelTokenSuffix
+	if strings.HasSuffix(s.configDir, configFileName) {
+		return s.configDir
+	}
+	return filepath.Join(s.configDir, configFileName)
+}
+
+// ModelTokenKey derives the vendor token key for the provided model, following
+// the `<VENDOR>_TOKEN` convention. When the vendor cannot be inferred the
+// default OpenAI slug is returned.
+func ModelTokenKey(model string) string {
+	slug := vendorSlugFromModel(model)
+	if slug == "" {
+		slug = defaultVendorSlug
+	}
+	return strings.ToUpper(slug) + vendorTokenSuffix
+}
+
+func vendorSlugFromModel(model string) string {
+	normalized := strings.ToLower(strings.TrimSpace(model))
+	if normalized == "" {
+		return defaultVendorSlug
+	}
+
+	if explicit := explicitVendorPrefix(normalized); explicit != "" {
+		return explicit
+	}
+
+	for _, mapping := range vendorHintTable {
+		for _, hint := range mapping.hints {
+			if strings.Contains(normalized, hint) {
+				return mapping.vendor
+			}
+		}
+	}
+
+	if firstToken := leadingToken(normalized); firstToken != "" {
+		return slugify(firstToken)
+	}
+
+	if slug := slugify(normalized); slug != "" {
+		return slug
+	}
+
+	return defaultVendorSlug
+}
+
+func explicitVendorPrefix(value string) string {
+	separators := func(r rune) bool {
+		switch r {
+		case '/', ':', '@':
+			return true
+		}
+		return false
+	}
+	parts := strings.FieldsFunc(value, separators)
+	if len(parts) > 1 {
+		if slug := slugify(parts[0]); slug != "" {
+			return slug
+		}
+	}
+	return ""
+}
+
+func leadingToken(value string) string {
+	for i, r := range value {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			continue
+		}
+		if i == 0 {
+			return ""
+		}
+		return value[:i]
+	}
+	return value
+}
+
+var vendorHintTable = []struct {
+	vendor string
+	hints  []string
+}{
+	{vendor: "openai", hints: []string{"openai", "gpt", "o1", "chatgpt"}},
+	{vendor: "anthropic", hints: []string{"anthropic", "claude"}},
+	{vendor: "google", hints: []string{"google", "gemini", "learnlm", "palm"}},
+	{vendor: "mistral", hints: []string{"mistral", "mixtral", "ministral"}},
+	{vendor: "cohere", hints: []string{"cohere", "command", "r-plus"}},
+	{vendor: "moonshot", hints: []string{"moonshot"}},
+	{vendor: "zhipu", hints: []string{"zhipu", "glm"}},
+	{vendor: "alibaba", hints: []string{"dashscope", "qwen"}},
+	{vendor: "baidu", hints: []string{"wenxin", "ernie", "qianfan"}},
+	{vendor: "minimax", hints: []string{"minimax", "abab"}},
+	{vendor: "bytedance", hints: []string{"doubao", "bytedance"}},
+	{vendor: "baichuan", hints: []string{"baichuan"}},
+	{vendor: "deepseek", hints: []string{"deepseek"}},
+	{vendor: "xai", hints: []string{"grok", "xai"}},
 }
 
 func slugify(input string) string {

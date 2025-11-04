@@ -47,9 +47,6 @@ func TestAIPolicyValidationFailsWithActionableMessage(t *testing.T) {
 		"ai",
 		"--path", rootDir,
 		"--dry-run",
-		"--naming-casing", "kebab",
-		"--naming-prefix", "proj",
-		"--banned", "offer",
 	})
 
 	err := rootCmd.Execute()
@@ -58,9 +55,6 @@ func TestAIPolicyValidationFailsWithActionableMessage(t *testing.T) {
 	}
 
 	lines := stderr.String()
-	if !strings.Contains(lines, "Policy violation (prefix)") {
-		t.Fatalf("expected prefix violation message in stderr, got: %s", lines)
-	}
 	if !strings.Contains(lines, "Policy violation (banned)") {
 		t.Fatalf("expected banned token message in stderr, got: %s", lines)
 	}

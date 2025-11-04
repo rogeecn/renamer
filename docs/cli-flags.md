@@ -123,17 +123,15 @@ renamer extension <source-ext...> <target-ext> [flags]
 
 ## AI Command Secrets
 
-- AI model authentication tokens are loaded from `$HOME/.config/.renamer/<MODEL>_MODEL_AUTH_TOKEN`. The default model token file is `default_MODEL_AUTH_TOKEN`, but any `--genkit-model` override maps to the same naming scheme.
-- Token files must contain only the raw API key with no extra whitespace; restrictive permissions (owner read/write) are recommended to keep credentials private.
+- AI vendor authentication tokens are read from the `.renamer` environment file located at `$HOME/.config/.renamer` by default (override with `RENAMER_CONFIG_DIR`). Each entry should follow the uppercase `<VENDOR>_TOKEN=...` naming convention; whitespace is trimmed automatically.
+- See `.renamer.example` for a pre-populated template covering OpenAI, Anthropic, Google Gemini, Mistral, Cohere, Moonshot, Zhipu, Alibaba DashScope, Baidu Wenxin, MiniMax, ByteDance Doubao, DeepSeek, and xAI Grok tokens.
+- Direct environment variables still take precedence over the config file, enabling CI/CD pipelines to inject secrets without touching the filesystem.
 
 ### AI Command Flags
 
 - `--genkit-model <id>` overrides the default OpenAI-compatible model used by the embedded Genkit workflow. When omitted, `gpt-4o-mini` is used.
 - `--debug-genkit` streams prompt/response telemetry (including prompt hashes and warnings) to stderr so you can archive the exchange for auditing.
-- `--export-plan <path>` writes the exact AI response (prompt hash, model, warnings, and proposed items) to a JSON file. The same file can be edited and re-imported to tweak filenames before applying.
-- `--import-plan <path>` loads a previously exported or manually curated JSON plan. The CLI re-validates all entries before previewing or applying changes.
-- `--naming-casing <style>` enforces a casing policy (`kebab`, `snake`, `camel`, `pascal`, `title`). Banned tokens, prefix rules, and spacing requirements are evaluated against the imported or generated plan.
-- `--naming-prefix`, `--naming-allow-spaces`, `--naming-keep-order`, and `--banned` extend the policy envelope that both the prompt and validator obey.
-- `--yes` applies the currently loaded plan. Without `--yes`, the command remains in preview mode even when you import a plan.
+- Naming policies and sanitization are handled directly inside the AI workflow; no additional CLI flags are required.
+- `--yes` applies the currently loaded plan. Without `--yes`, the command remains in preview mode even when a plan already exists.
 
-> Tip: Run `renamer ai --path ./fixtures --dry-run --export-plan plan.json` to capture the initial draft, edit the JSON file, then `renamer ai --path ./fixtures --import-plan plan.json --yes` to apply the curated result.
+> Tip: Running `renamer ai` writes or refreshes `renamer.plan.json` in the working directory. Edit that file as needed, then re-run `renamer ai --yes` to apply the reviewed plan once the preview looks good.
