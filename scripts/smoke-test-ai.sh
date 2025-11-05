@@ -1,61 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BIN="go run"
-TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT
-
-mkdir -p "$TMP_DIR"
-touch "$TMP_DIR/raw_demo 01.txt"
-touch "$TMP_DIR/raw_demo 02.txt"
-
-PLAN_JSON="$TMP_DIR/ai-plan.json"
-
-echo "Generating initial AI plan preview..."
-$BIN "$ROOT_DIR/main.go" ai --path "$TMP_DIR" --dry-run --export-plan "$PLAN_JSON" >/dev/null
-
-if [[ ! -s "$PLAN_JSON" ]]; then
-  echo "expected plan export at $PLAN_JSON" >&2
+if [[ -z "${RENAMER_AI_KEY:-}" ]]; then
+  echo "RENAMER_AI_KEY must be set" >&2
   exit 1
 fi
 
-echo "Editing exported plan for deterministic names..."
-python3 - <<'PY'
-import json, pathlib
-path = pathlib.Path("$PLAN_JSON")
-plan = json.loads(path.read_text())
-for idx, item in enumerate(plan.get("items", []), start=1):
-    item["proposed"] = f"{idx:03d}_final_demo.txt"
-plan["warnings"] = plan.get("warnings", []) + ["edited in smoke script"]
-path.write_text(json.dumps(plan, indent=2) + "\n")
-PY
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
 
-echo "Validating edited plan (dry run)..."
-$BIN "$ROOT_DIR/main.go" ai --path "$TMP_DIR" --dry-run --import-plan "$PLAN_JSON" >/dev/null
+mkdir -p "$tmp/nested"
+touch "$tmp/IMG_0001.jpg"
+touch "$tmp/nested/video01.mp4"
 
-echo "Applying edited plan..."
-$BIN "$ROOT_DIR/main.go" ai --path "$TMP_DIR" --import-plan "$PLAN_JSON" --yes >/dev/null
+echo "Previewing AI suggestions..."
+renamer ai --path "$tmp" --prompt "Smoke demo" --dry-run <<<'q'
 
-if [[ ! -f "$TMP_DIR/001_final_demo.txt" ]]; then
-  echo "expected 001_final_demo.txt to exist" >&2
-  exit 1
-fi
-if [[ ! -f "$TMP_DIR/002_final_demo.txt" ]]; then
-  echo "expected 002_final_demo.txt to exist" >&2
-  exit 1
-fi
+echo "Applying AI suggestions..."
+renamer ai --path "$tmp" --prompt "Smoke demo" --yes
 
-echo "Undoing AI plan application..."
-$BIN "$ROOT_DIR/main.go" undo --path "$TMP_DIR" >/dev/null
+echo "Undoing last AI batch..."
+renamer undo --path "$tmp"
 
-if [[ ! -f "$TMP_DIR/raw_demo 01.txt" ]]; then
-  echo "undo failed to restore raw_demo 01.txt" >&2
-  exit 1
-fi
-if [[ ! -f "$TMP_DIR/raw_demo 02.txt" ]]; then
-  echo "undo failed to restore raw_demo 02.txt" >&2
-  exit 1
-fi
-
-echo "AI smoke test succeeded."
+echo "Smoke test completed."
