@@ -53,7 +53,6 @@ func NewRootCommand() *cobra.Command {
 	cmd.AddCommand(newRegexCommand())
 	cmd.AddCommand(newSequenceCommand())
 	cmd.AddCommand(newUndoCommand())
-	cmd.AddCommand(newAICommand())
 
 	return cmd
 }
