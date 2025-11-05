@@ -121,17 +121,22 @@ renamer extension <source-ext...> <target-ext> [flags]
 - Apply case-folded extension updates: `renamer extension .yaml .yml .yml --yes --path ./configs`
 - Include hidden assets recursively: `renamer extension .TMP .tmp --recursive --hidden`
 
-## AI Command Secrets
+## AI Command Quick Reference
 
-- AI vendor authentication tokens are read from the `.renamer` environment file located at `$HOME/.config/.renamer` by default (override with `RENAMER_CONFIG_DIR`). Each entry should follow the uppercase `<VENDOR>_TOKEN=...` naming convention; whitespace is trimmed automatically.
-- See `.renamer.example` for a pre-populated template covering OpenAI, Anthropic, Google Gemini, Mistral, Cohere, Moonshot, Zhipu, Alibaba DashScope, Baidu Wenxin, MiniMax, ByteDance Doubao, DeepSeek, and xAI Grok tokens.
-- Direct environment variables still take precedence over the config file, enabling CI/CD pipelines to inject secrets without touching the filesystem.
+```bash
+renamer ai [flags]
+```
 
-### AI Command Flags
+- Generates AI rename suggestions using the embedded Genkit flow. Preview results can be applied immediately or inspected interactively first.
+- Scope flags (`--path`, `-r`, `-d`, `--hidden`, `--extensions`) determine which files feed into the flow. Up to 200 entries are accepted per request.
+- Provide user guidance via `--prompt "Describe naming scheme"`; when omitted the flow falls back to deterministic sequencing.
+- Output renders in a tabular layout showing sequence number, original path, and proposed filename. Validation conflicts are surfaced inline and block continuation.
+- After each preview choose `(r)` to regenerate, `(e)` to edit the prompt, `(q)` to exit, or press Enter with a clean preview to finish.
+- Use `--yes` for non-interactive runs; the command applies the suggestions when the preview is conflict-free.
+- Control numbering format with `--sequence-separator` (default `.`) to change the character(s) inserted between the sequence value and the generated name.
 
-- `--genkit-model <id>` overrides the default OpenAI-compatible model used by the embedded Genkit workflow. When omitted, `gpt-4o-mini` is used.
-- `--debug-genkit` streams prompt/response telemetry (including prompt hashes and warnings) to stderr so you can archive the exchange for auditing.
-- Naming policies and sanitization are handled directly inside the AI workflow; no additional CLI flags are required.
-- `--yes` applies the currently loaded plan. Without `--yes`, the command remains in preview mode even when a plan already exists.
+### Credentials
 
-> Tip: Running `renamer ai` writes or refreshes `renamer.plan.json` in the working directory. Edit that file as needed, then re-run `renamer ai --yes` to apply the reviewed plan once the preview looks good.
+- Provide a Gemini API key via `GOOGLE_API_KEY` (recommended) or `GEMINI_API_KEY`. For backward compatibility `RENAMER_AI_KEY` is also accepted.
+- Optional: override service endpoints using `GOOGLE_GEMINI_BASE_URL` (Gemini) and `GOOGLE_VERTEX_BASE_URL` (Vertex AI). These must be set **before** the command runs so the Genkit SDK can pick them up.
+- If no key is detected the command exits with an error before calling the model.

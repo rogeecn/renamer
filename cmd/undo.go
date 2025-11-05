@@ -38,6 +38,13 @@ func newUndoCommand() *cobra.Command {
 					if sources, ok := entry.Metadata["sourceExtensions"].([]string); ok && len(sources) > 0 {
 						fmt.Fprintf(out, "Previous sources: %s\n", strings.Join(sources, ", "))
 					}
+				case "ai":
+					if prompt, ok := entry.Metadata["prompt"].(string); ok && prompt != "" {
+						fmt.Fprintf(out, "Reverted AI batch generated from prompt %q\n", prompt)
+					}
+					if warnings, ok := entry.Metadata["warnings"].([]string); ok && len(warnings) > 0 {
+						fmt.Fprintf(out, "Warnings during preview: %s\n", strings.Join(warnings, "; "))
+					}
 				case "insert":
 					insertText, _ := entry.Metadata["insertText"].(string)
 					positionToken, _ := entry.Metadata["positionToken"].(string)

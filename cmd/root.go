@@ -49,6 +49,7 @@ func NewRootCommand() *cobra.Command {
 	cmd.AddCommand(NewReplaceCommand())
 	cmd.AddCommand(NewRemoveCommand())
 	cmd.AddCommand(NewExtensionCommand())
+	cmd.AddCommand(newAICommand())
 	cmd.AddCommand(newInsertCommand())
 	cmd.AddCommand(newRegexCommand())
 	cmd.AddCommand(newSequenceCommand())

@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info:
+  title: Genkit renameFlow Contract
+  version: 0.1.0
+  description: >
+    Contract for the `renameFlow` Genkit workflow that produces structured rename
+    suggestions consumed by the `renamer ai` CLI command.
+servers:
+  - url: genkit://renameFlow
+    description: Logical identifier for local Genkit execution.
+paths:
+  /renameFlow: # logical entry point (function invocation)
+    post:
+      summary: Generate rename suggestions for provided file names.
+      description: Mirrors `genkit.Run(ctx, renameFlow, input)` in the CLI integration.
+      operationId: runRenameFlow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameFlowInput'
+      responses:
+        '200':
+          description: Successful rename suggestion payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenameFlowOutput'
+        '400':
+          description: Validation error (e.g., invalid filenames, mismatched counts).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RenameFlowInput:
+      type: object
+      required:
+        - fileNames
+        - userPrompt
+      properties:
+        fileNames:
+          type: array
+          description: Ordered list of basenames collected from CLI traversal.
+          minItems: 1
+          maxItems: 200
+          items:
+            type: string
+            pattern: '^[^\\/:*?"<>|]+$'
+        userPrompt:
+          type: string
+          description: Optional guidance supplied by the user.
+          minLength: 0
+          maxLength: 500
+    RenameFlowOutput:
+      type: object
+      required:
+        - suggestions
+      properties:
+        suggestions:
+          type: array
+          description: Suggested rename entries aligned with the input order.
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/RenameSuggestion'
+    RenameSuggestion:
+      type: object
+      required:
+        - original
+        - suggested
+      properties:
+        original:
+          type: string
+          description: Original basename supplied in the request.
+          pattern: '^[^\\/:*?"<>|]+$'
+        suggested:
+          type: string
+          description: Proposed basename retaining original extension.
+          pattern: '^[^\\/:*?"<>|]+$'
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable reason for failure.
+        remediation:
+          type: string
+          description: Suggested user action (e.g., adjust scope, reduce file count).
